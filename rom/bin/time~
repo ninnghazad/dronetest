@@ -1,2 +1,0 @@
-print(sys.getTime())
-return true

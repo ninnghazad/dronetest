@@ -1,2 +1,0 @@
-print("This systems id is "..sys.id..", it is of type "..sys.type..".")
-return true
