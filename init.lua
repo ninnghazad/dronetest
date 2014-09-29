@@ -398,19 +398,32 @@ userspace_environment.setfenv = setfenv
 userspace_environment.pcall = pcall
 userspace_environment.xpcall = xpcall
 
-
 userspace_environment.loadfile = function(s)
-	local f = loadfile(s)
+	local f,err = loadfile(s)
+	if f == nil then
+		print(err)
+		return nil,err
+	end
 	setfenv(f,getfenv(1))
-	return f
+	return f,""
 end
 
 userspace_environment.loadstring = function(s)
-	local f = loadstring(s)
+	local f,err = loadstring(s)
+	if f == nil then
+		print(err)
+		return nil,err
+	end
+	
 	setfenv(f,getfenv(1))
-	return f
+	return f,""
 end
 
+
+function timeout()
+	print("SUCH TIMEOUT! VERY WAIT! MUCH SLOW!")
+	
+end
 
 local function activate_by_id(id,t)
 	if t == nil then t = "drone" end
@@ -432,8 +445,11 @@ local function activate_by_id(id,t)
 		dronetest.print(id,"ERROR: "..dump(err))
 		print("INTERNALERROR: "..dump(err)..dump(debug.traceback()))
 	end
+	--local cr = coroutine.create(function() xpcall(function() debug.sethook(timeout,"",100) bootstrap() end,error_handler) end)
 	local cr = coroutine.create(function() xpcall(bootstrap,error_handler) end)
-	active_systems[id] = {coroutine_handle = cr,events = {},id=id,pos=pos}
+	--debug.sethook(cr,function () coroutine.yield() end,"",100)
+	
+	active_systems[id] = {coroutine_handle = cr,events = {},id=id,pos=pos,last_update = minetest.get_gametime()}
 	
 	dronetest.log("STATUS: "..coroutine.status(active_systems[id].coroutine_handle))
 	dronetest.log("TYPE: "..type(active_systems[id]))
@@ -543,13 +559,14 @@ minetest.register_globalstep(function(dtime)
 	local co
 	timer = timer + dtime;
 	if timer >= dronetest.globalstep_interval then
-	--	minetest.chat_send_all("dronetest globalstep @"..timer.." with "..count(active_systems).." systems.")
+		minetest.chat_send_all("dronetest globalstep @"..timer.." with "..count(active_systems).." systems.")
 		for id,s in pairs(active_systems) do
 			co = s.coroutine_handle
 			--dronetest.log("Tic drone #"..id..". "..coroutine.status(co))
 			-- TODO: some kind of timeout?!
 			if coroutine.status(co) == "suspended" then
 				coroutine.resume(co)
+				s.last_update = minetest.get_gametime()
 			else
 				-- System ended
 				dronetest.log("System #"..id.."'s main process has endet! Restarting soon...")

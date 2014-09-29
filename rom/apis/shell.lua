@@ -10,14 +10,26 @@ function shell.errorHandler(err,level)
 end
 function shell.run(cmd)
 	-- TODO: write real cli parser
-	local f = loadfile(mod_dir.."/rom/bin/"..cmd)
+	local f,err = loadfile(mod_dir.."/rom/bin/"..cmd)
 	print("shell.run: "..mod_dir.."/rom/bin/"..cmd)
 	if f == nil then
-		print("ERROR: no such file or buggy file '"..cmd.."'.")
+		print("ERROR: no such file or buggy file '"..cmd.."': "..err)
 		return false
 	end
 	-- Make sure we don't give API's environment to userspace function
 	setfenv(f,getfenv(2))
+	f = function() 
+		debug.sethook(function ()
+			
+			if minetest.get_gametime() > active_systems[sys.id].last_update + 10 then
+				print("TOO LONG WITHOUT YIELD!")
+			else print("HOOK "..sys.getTime().. " > "..active_systems[sys.id].last_update)
+			end
+		end,"",5) 
+		
+		return f() 
+	end
+	--debug.sethook(function () print("INNER TIMEOUT") end,"",99)
 	local r = xpcall(f,shell.errorHandler)
 	if r == false then
 		print("WARN: "..cmd.." failed!")

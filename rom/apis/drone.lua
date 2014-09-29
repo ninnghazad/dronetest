@@ -108,19 +108,22 @@ function drone.forward()
 	local pos = d.object:getpos()
 	local yaw = d.object:getyaw()
 	local dir = yaw2dir(snapRotation(yaw))
+	if dir == 0 then dir = 2 
+	elseif dir == 2 then dir = 0 end
+	
 	local opos = minetest.facedir_to_dir(dir)
 	local npos = table.copy(pos) 
-	npos.x = npos.x - opos.x
-	npos.y = npos.y - opos.y
-	npos.z = npos.z - opos.z
+	npos.x = npos.x + opos.x
+	npos.y = npos.y + opos.y
+	npos.z = npos.z + opos.z
 	local result,reason = checkTarget(npos)
 	if not result then return result,reason end
 	print("FORWARD: "..dump(pos).." "..dump(opos).." "..dump(npos).." "..dir.." "..yaw)
 	npos = table.copy(pos)
 	for i=1,steps,1 do
-		npos.x = npos.x - opos.x/steps
-		npos.y = npos.y - opos.y/steps
-		npos.z = npos.z - opos.z/steps
+		npos.x = npos.x + opos.x/steps
+		npos.y = npos.y + opos.y/steps
+		npos.z = npos.z + opos.z/steps
 		d.object:moveto(npos,true)
 		sys.yield()
 	end
@@ -129,14 +132,23 @@ end
 function drone.back()
 	local d = dronetest.drones[sys.id]
 	local pos = d.object:getpos()
-	local dir = yaw2dir(d.object:getyaw())
+	local yaw = d.object:getyaw()
+	local dir = yaw2dir(snapRotation(yaw))
 	local opos = minetest.facedir_to_dir(dir)
+	dir = dir + 2
+	if dir > 3 then dir = dir - 4 end
+	
+	if dir == 0 then dir = 2 
+	elseif dir == 2 then dir = 0 end
+	local opos = minetest.facedir_to_dir(dir)
+	
 	local npos = table.copy(pos) 
 	npos.x = npos.x + opos.x
 	npos.y = npos.y + opos.y
 	npos.z = npos.z + opos.z
 	local result,reason = checkTarget(npos)
 	if not result then return result,reason end
+	print("BACK: "..dump(pos).." "..dump(opos).." "..dump(npos).." "..dir.." "..yaw)
 	npos = table.copy(pos)
 	for i=1,steps,1 do
 		npos.x = npos.x + opos.x/steps

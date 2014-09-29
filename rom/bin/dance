@@ -20,6 +20,7 @@ while true do
 --]]
 ---[[
 	local r = math.round(math.random() * 6)
+	if r == 6 then r = 0 end
 	if r == 0 then
 		drone.forward()
 	elseif r == 1 then

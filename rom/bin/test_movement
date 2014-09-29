@@ -3,28 +3,39 @@ if drone == nil then
 	return false
 end
 
-print("SYSTEM GETTING DOWN NOW!")
-local pos = {x=0,y=0,z=0}
-while true do
-	print("### 0 "..sys.id.." "..getId())
-	sys.yield()
+local function T() 
+end
+-- debug.sethook(function() print("AHA2") end,"",10) 
+--xpcall(T)
 
+--T=(function (...) return {select('#',...),...} end)(pcall(T))
+--print(dump(T))
+--debug.sethook(function() print("AHA") end,"",10) 
+while true do 
+	print("HANG"..sys.getTime()) 
+end 
+
+print("TEST")
+return true
+
+--[[
+while true do
+--	print("### 0 "..sys.id.." "..getId())
+	sys.yield()
 	if sys:receiveEvent({"input"}) ~= nil then
 		print("RECEIVED INPUT, ABORT EPIC MOVES NOW!")
 		break
 	end
-
-	drone.forward()
-	drone.back()
-	drone.turnLeft()
-	drone.forward()
-	drone.back()
-	drone.turnLeft()
-	drone.forward()
-	drone.back()
-	drone.turnLeft()
-	drone.forward()
-	drone.back()
-	drone.turnLeft()
+	for i=1,4,1 do
+		os.sleep(0.5)
+		drone.forward()
+		os.sleep(0.5)
+		drone.back()
+		os.sleep(0.5)
+		drone.turnLeft()
+	end
+	while true do
+	end
 end
 return true
+--]]
