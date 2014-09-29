@@ -25,6 +25,9 @@ function shell.run(cmd)
 				print("TOO LONG WITHOUT YIELD!")
 			else print("HOOK "..sys.getTime().. " > "..active_systems[sys.id].last_update)
 			end
+			active_systems[sys.id].cr = nil
+			error("OMG!")
+			return false
 		end,"",5) 
 		
 		return f() 
