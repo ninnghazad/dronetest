@@ -6,6 +6,7 @@ Licensed under NOTHING.
 ****
 --]]
 
+
 mod_name = minetest.get_current_modname()
 mod_dir = minetest.get_modpath(mod_name)
 
@@ -19,6 +20,55 @@ package.cpath = package.cpath
 lfs = require("lfs")
 
 
+
+--[[
+local maxInst = 1000000
+local function yield() print("yield") coroutine.yield() end
+local function t() while true do end end
+setfenv(t,getfenv(1))
+
+
+for i = 1, 10, 1 do
+print("cross-yield-hook test 1: coroutine yield per hook")
+local co = coroutine.create(t)
+while true do
+	local status = coroutine.status(co)
+	print("status "..status)
+	if status == "suspended" then
+		print("resume "..status)
+		debug.sethook(co,yield,"",maxInst)
+		coroutine.resume(co)
+		debug.sethook(co)
+	elseif status == "dead" then
+		print("dead "..status)
+		co = nil
+		break
+	end
+end
+end
+print("ok")
+
+for i = 1, 100, 1 do
+print("cross-yield-hook test 2: coroutine yield per hook, through pcall")
+local co = coroutine.create(function() pcall(t) end)
+while true do
+	local status = coroutine.status(co)
+	print("status "..status)
+	if status == "suspended" then
+		print("resume "..status)
+		debug.sethook(co,yield,"",maxInst)
+		coroutine.resume(co)
+		debug.sethook(co)
+	elseif status == "dead" then
+		print("dead "..status)
+		co = nil
+		break
+	end
+end
+end
+print("ok")
+--jit.on()
+--]]
 function is_filename(filename)
 	if string.find(filename,"..",1,true) ~= nil then
 		return false
@@ -422,7 +472,7 @@ end
 
 function timeout()
 	print("SUCH TIMEOUT! VERY WAIT! MUCH SLOW!")
-	
+	coroutine.yield()
 end
 
 local function activate_by_id(id,t)
@@ -439,7 +489,7 @@ local function activate_by_id(id,t)
 	env.print = function(msg) dronetest.print(id,msg) end
 	
 	env._G = env
-	
+	jit.off(bootstrap,true)
 	setfenv(bootstrap,env)
 	function error_handler(err)
 		dronetest.print(id,"ERROR: "..dump(err))
@@ -565,6 +615,7 @@ minetest.register_globalstep(function(dtime)
 			--dronetest.log("Tic drone #"..id..". "..coroutine.status(co))
 			-- TODO: some kind of timeout?!
 			if coroutine.status(co) == "suspended" then
+				debug.sethook(co,coroutine.yield,"",1000000)
 				coroutine.resume(co)
 				s.last_update = minetest.get_gametime()
 			else

@@ -4,6 +4,9 @@ for i,v in pairs(getfenv(1)) do
 	print("SHELL ENV "..i..": "..type(v))
 end
 --]]
+
+
+
 local shell = {}
 function shell.errorHandler(err,level)
 	print("ERROR @ "..err)
@@ -18,20 +21,26 @@ function shell.run(cmd)
 	end
 	-- Make sure we don't give API's environment to userspace function
 	setfenv(f,getfenv(2))
+	jit.off(f,true)
+--[[	
 	f = function() 
 		debug.sethook(function ()
 			
 			if minetest.get_gametime() > active_systems[sys.id].last_update + 10 then
 				print("TOO LONG WITHOUT YIELD!")
-			else print("HOOK "..sys.getTime().. " > "..active_systems[sys.id].last_update)
+			else 
+				print("HOOK "..sys.getTime().. " > "..active_systems[sys.id].last_update)
+				print(os.execute("date +%s"))
 			end
-			active_systems[sys.id].cr = nil
-			error("OMG!")
+			coroutine.yield()
+	--		active_systems[sys.id].cr = nil
+	--		error("OMG!")
 			return false
 		end,"",5) 
 		
 		return f() 
 	end
+--]]
 	--debug.sethook(function () print("INNER TIMEOUT") end,"",99)
 	local r = xpcall(f,shell.errorHandler)
 	if r == false then

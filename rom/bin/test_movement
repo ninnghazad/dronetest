@@ -3,17 +3,8 @@ if drone == nil then
 	return false
 end
 
-local function T() 
-end
--- debug.sethook(function() print("AHA2") end,"",10) 
---xpcall(T)
 
---T=(function (...) return {select('#',...),...} end)(pcall(T))
---print(dump(T))
---debug.sethook(function() print("AHA") end,"",10) 
-while true do 
-	print("HANG"..sys.getTime()) 
-end 
+while true do end 
 
 print("TEST")
 return true
