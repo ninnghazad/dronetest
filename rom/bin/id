@@ -1,0 +1,2 @@
+print("This system's id is "..sys.id..", it is of type "..sys.type..".")
+return true

@@ -1,0 +1,22 @@
+if drone == nil then
+	print("this program can only run on drones.")
+	return false
+end
+
+print("SYSTEM GETTING DOWN NOW!")
+local pos = {x=0,y=0,z=0}
+while true do
+	print("### 0 "..sys.id.." "..getId())
+	sys.yield()
+
+	if sys:receiveEvent({"input"}) ~= nil then
+		print("RECEIVED INPUT, ABORT EPIC MOVES NOW!")
+		break
+	end
+--[[
+	os.sleep(2)
+	drone.forward()
+	drone.back()
+--]]
+end
+return true

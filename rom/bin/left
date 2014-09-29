@@ -1,0 +1,6 @@
+if drone == nil then
+	print("this program can only run on drones.")
+	return false
+end
+
+return drone.turnLeft()

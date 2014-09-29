@@ -1,0 +1,2 @@
+print(sys.getTime().." seconds have passed since the beginning of known time.")
+return true
