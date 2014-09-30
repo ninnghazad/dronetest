@@ -621,6 +621,8 @@ minetest.register_on_shutdown(function() active_systems = {} end)
 local timer = 0
 minetest.register_globalstep(function(dtime)
 	local co
+	local id
+	local s
 	timer = timer + dtime;
 	if timer >= dronetest.globalstep_interval then
 		minetest.chat_send_all("dronetest globalstep @"..timer.." with "..count(active_systems).." systems.")
@@ -643,44 +645,50 @@ minetest.register_globalstep(function(dtime)
 end)
 
 ---[[
+local function printTable(t,filter,invertFilter,printfunc)
+	if printfunc == nil then 
+		printfunc = function(i,v) return print(i..": "..type(v)) end 
+	end
+	if invertFilter == nil then 
+		invertFilter = false
+	end
+	local i
+	local v
+	print("printTable: ")
+	for i,v in pairs(t) do
+		local found = false
+		if filter == nil or (type(filter) == "string" and type(v) == filter) then
+			found = true
+		elseif type(filter) == "table" then
+			for _,f in ipairs(filter) do
+				if type(v) == f then
+					found = true
+					break
+				end
+			end
+		end
+		if found ~= invertFilter then
+			printfunc(i,v)
+		end
+	end
+end
 minetest.register_globalstep(function(dtime)
 	local p = minetest.get_player_by_name("singleplayer")
 	if not p then return end
-	local pos = p:getpos()
 	
-	print("TEST0") -- works
-	print(dump(minetest.get_objects_inside_radius(pos,3)))
-	
-	print("TEST1") -- works
-	pcall(function() print(dump(minetest.get_objects_inside_radius(pos,3))) end)
-	
-	print("TEST2: "..#minetest.env) -- segfaults!
-	local env = table.copy(_G)
-	env["minetest"] = minetest
-	print(minetest.get_player_by_name("singleplayer"):get_player_name())
-	mtglob = minetest
-	local p = minetest.get_player_by_name("singleplayer")
-	
-	local function f1() 
-		print("BEFORE: "..#minetest) 
-		print(p:get_player_name())
-		print("BETWEEN")
-		print(env.minetest.get_player_by_name("singleplayer"):get_player_name()) 
-		print("BETWEEN")
-		print("TEST: "..#minetest.get_objects_inside_radius(pos,3)) 
-		print("AFTER") 
+	print("TEST 0: "..p:get_player_name().." "..type(p))
+	print("TEST A: "..minetest.get_gametime())
+	local function e(msg) print("TESTERROR: "..msg) end
+	local function f() 
+		print("TEST 1: "..p:get_player_name().." "..type(p))
+		p = minetest.get_player_by_name("singleplayer")
+		print("TEST 2: "..p.." "..type(p)) -- there is no :get_player_name()...
+		print("TEST B: "..minetest.get_gametime())
 	end
-	--setfenv(f1,env)
-	local co = coroutine.create(f1) 
-	--debug.setfenv(co,env)
 	
+	local co = coroutine.create(function() xpcall(f,e) end)
 	while coroutine.status(co) == "suspended" do coroutine.resume(co) end
-	
-	
-	print("TEST3")
-	local co = coroutine.create(function() pcall(function() print(dump(minetest.get_objects_inside_radius(pos,3))) end) end)
-	while coroutine.status(co) == "suspended" do coroutine.resume(co) end
-	
+	error("bail")
 	return true
 end)
 --]]
