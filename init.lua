@@ -21,6 +21,18 @@ package.cpath = package.cpath
 
 lfs = require("lfs")
 
+mt = minetest
+function get_objects(pos,radius)
+--	print("get_objects: "..dump(pos).." "..radius)
+	print("time: "..minetest.get_gametime())
+	
+	--local objs = mt.env:get_objects_inside_radius(pos,radius)
+	local objs = mt.env:get_objects_inside_radius(pos,radius)
+	print("get_objects returned: "..#objs.." objects")
+	return objs
+end
+
+setfenv(get_objects,getfenv(0))
 
 
 --[[
@@ -571,7 +583,7 @@ minetest.register_on_player_receive_fields(function(player, formname, fields)
 				minetest.chat_send_player(player:get_player_name(),"Cannot exec, activate system first.")
 			end
 		end
-		if dronetest.drones[id].menu then
+		if dronetest.drones[id].menu ~= nil and dronetest.drones[id].menu == true then
 			minetest.show_formspec(player:get_player_name(), "dronetest:drone:"..id, get_drone_formspec(id))
 		end
 		return true
@@ -629,6 +641,44 @@ minetest.register_globalstep(function(dtime)
 		timer = 0
 	end
 end)
+
+---[[
+minetest.register_globalstep(function(dtime)
+	local p = minetest.get_player_by_name("singleplayer")
+	if not p then return end
+	local pos = p:getpos()
+	
+	print("TEST0") -- works
+	print(dump(minetest.get_objects_inside_radius(pos,3)))
+	
+	print("TEST1") -- works
+	pcall(function() print(dump(minetest.get_objects_inside_radius(pos,3))) end)
+	
+	print("TEST2: "..#minetest.env) -- segfaults!
+	local env = _G
+	env["minetest"] = minetest
+	print(minetest.get_player_by_name("singleplayer"):get_player_name())
+	local function f1() 
+		print("BEFORE: "..#minetest) 
+		print(minetest.get_player_by_name("singleplayer"):get_player_name()) 
+		print("BETWEEN")
+		print("TEST: "..#minetest.get_objects_inside_radius(pos,3)) 
+		print("AFTER") 
+	end
+	--setfenv(f1,env)
+	local co = coroutine.create(f1) 
+	--debug.setfenv(co,env)
+	
+	while coroutine.status(co) == "suspended" do coroutine.resume(co) end
+	
+	
+	print("TEST3")
+	local co = coroutine.create(function() pcall(function() print(dump(minetest.get_objects_inside_radius(pos,3))) end) end)
+	while coroutine.status(co) == "suspended" do coroutine.resume(co) end
+	
+	return true
+end)
+--]]
 
 minetest.register_abm({
 	nodenames = {"dronetest:drone"},

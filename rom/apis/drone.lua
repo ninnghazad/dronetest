@@ -17,9 +17,9 @@ local function checkTarget(pos)
 	if node ~= nil and node.name ~= "air" then
 		return false,"node"
 	end
-	print("check for objects @ "..dump(pos))
-	local objs = minetest.get_objects_inside_radius(pos, 0.4)
-	print(dump(objs))
+	print(dump(minetest.env))
+	local objs = get_objects(pos, 0.2)
+	
 	return true
 	--[[
 	for i,o in ipairs(objs) do
@@ -46,7 +46,7 @@ local function snapRotation(r)
 end
 function drone.wield()
 	local d = dronetest.drones[sys.id]
-	local inv = minetest.get_inventory({type="detached",name="dronetest_drone_"..sys.id})
+	local inv = minetest.env:get_inventory({type="detached",name="dronetest_drone_"..sys.id})
 	if inv == nil then
 		error("Drone without inventory!")
 		return false

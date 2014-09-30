@@ -5,7 +5,6 @@ end
 
 
 while true do
---	print("### 0 "..sys.id.." "..getId())
 	sys.yield()
 	if sys:receiveEvent({"input"}) ~= nil then
 		print("RECEIVED INPUT, ABORT EPIC MOVES NOW!")
