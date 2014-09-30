@@ -10,8 +10,10 @@ Licensed under NOTHING.
 mod_name = minetest.get_current_modname()
 mod_dir = minetest.get_modpath(mod_name)
 
-minetest.log("action", "[MOD] "..mod_name.." -- loading from "..mod_dir)
-minetest.register_on_shutdown(function() minetest.log("action", "[MOD] "..mod_name.." -- unloading ...") end)
+if minetest.setting_getbool("log_mods") then
+	minetest.log("action", "[MOD] "..mod_name.." -- loading from "..mod_dir)
+	minetest.register_on_shutdown(function() minetest.log("action", "[MOD] "..mod_name.." -- unloading ...") end)
+end
 -- include Lua File System, not sure if more versions are needed, this is linux64 and win32 i think
 package.cpath = package.cpath
 	.. ";" .. mod_dir .. "/lfs.so"
@@ -645,6 +647,10 @@ minetest.register_abm({
 
 
 local drone = {
+	hp_max = 1,
+	weight = 5,
+	is_visible = true,
+	makes_footstep_sound = false,
         physical = true,
         collisionbox = {-0.5,-0.5,-0.5, 0.5,0.5,0.5},
 	visual = "cube",
@@ -861,5 +867,7 @@ minetest.register_node("dronetest:computer", {
 })
 	
 -- Some message that the mod has loaded/unloaded
-minetest.register_on_shutdown(function() minetest.log("action", "[MOD] "..mod_name.." -- unloaded!") end)
-minetest.log("action","[MOD] "..minetest.get_current_modname().." -- loaded!")
+if minetest.setting_getbool("log_mods") then
+	minetest.register_on_shutdown(function() minetest.log("action", "[MOD] "..mod_name.." -- unloaded!") end)
+	minetest.log("action","[MOD] "..minetest.get_current_modname().." -- loaded!")
+end

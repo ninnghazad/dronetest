@@ -17,8 +17,18 @@ local function checkTarget(pos)
 	if node ~= nil and node.name ~= "air" then
 		return false,"node"
 	end
-	
+	print("check for objects @ "..dump(pos))
+	local objs = minetest.get_objects_inside_radius(pos, 0.4)
+	print(dump(objs))
 	return true
+	--[[
+	for i,o in ipairs(objs) do
+		if o.physical then
+			return false,"object"
+		end
+	end
+	return true
+	--]]
 end
 local function snapRotation(r)
 	while r < 0 do r = r + (1/rad2unit) end

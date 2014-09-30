@@ -4,12 +4,6 @@ if drone == nil then
 end
 
 
-while true do end 
-
-print("TEST")
-return true
-
---[[
 while true do
 --	print("### 0 "..sys.id.." "..getId())
 	sys.yield()
@@ -25,8 +19,5 @@ while true do
 		os.sleep(0.5)
 		drone.turnLeft()
 	end
-	while true do
-	end
 end
 return true
---]]
