@@ -655,12 +655,17 @@ minetest.register_globalstep(function(dtime)
 	pcall(function() print(dump(minetest.get_objects_inside_radius(pos,3))) end)
 	
 	print("TEST2: "..#minetest.env) -- segfaults!
-	local env = _G
+	local env = table.copy(_G)
 	env["minetest"] = minetest
 	print(minetest.get_player_by_name("singleplayer"):get_player_name())
+	mtglob = minetest
+	local p = minetest.get_player_by_name("singleplayer")
+	
 	local function f1() 
 		print("BEFORE: "..#minetest) 
-		print(minetest.get_player_by_name("singleplayer"):get_player_name()) 
+		print(p:get_player_name())
+		print("BETWEEN")
+		print(env.minetest.get_player_by_name("singleplayer"):get_player_name()) 
 		print("BETWEEN")
 		print("TEST: "..#minetest.get_objects_inside_radius(pos,3)) 
 		print("AFTER") 
