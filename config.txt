@@ -1,4 +1,0 @@
-# Interval to run LUA-coroutines at.
-globalstep_interval = 0.01
-# The last id given to a computer or drone.
-last_id = 1

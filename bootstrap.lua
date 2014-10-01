@@ -7,7 +7,19 @@ end
 --]]
 
 
-
+function processInput(msg)
+	if msg == nil or type(msg) ~= "string" then return false end
+	local result = false
+	
+	-- TODO: this doesn't work with quotes, use a nice regex or something to make it better
+	local argv = string.split(msg," ")
+	if type(argv) ~= "table" or #argv < 1 then return false end
+	local cmd = table.remove(argv,1)
+	argv[0] = cmd -- i like it the C way
+	print(cmd..": "..dump(argv))
+	result = shell.run(cmd,argv)
+	return result
+end
 
 print("System #"..(sys.id).." is booting!")
 -- Load the APIs
@@ -56,7 +68,11 @@ while true do
 	if event ~= nil then
 		if event.type == "input" then
 		--	print(sys.id.." received input: "..dump(event.msg))
-			shell.run(event.msg)
+			if type(event.msg) ~= "string" or event.msg == "" then
+				print("$")
+			elseif not processInput(event.msg) then 
+				print("Command '"..event.msg.."' failed.")
+			end
 		else
 			print(sys.id.." received unhandled event: "..dump(event))
 		end

@@ -17,8 +17,8 @@ local function checkTarget(pos)
 	if node ~= nil and node.name ~= "air" then
 		return false,"node"
 	end
-	print(dump(minetest.env))
-	local objs = get_objects(pos, 0.2)
+	--print(dump(minetest.env))
+	--local objs = get_objects(pos, 0.2)
 	
 	return true
 	--[[
