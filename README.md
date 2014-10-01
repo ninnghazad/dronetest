@@ -8,8 +8,9 @@ This is not ready for use.
 <img src="http://dunkelraum.net/share/screen0.jpg"/>
 
 ###How to use:
-Install in mods/ as "dronetest".
-type '/giveme dronetest:computer' to get a computer,'/giveme dronetest:computer' to get a drone-spawner.
+Install in mods/ as "dronetest". 
+Type '/giveme dronetest:computer' to get a computer,
+'/giveme dronetest:computer' to get a drone-spawner.
 Place it and rightclick it. 
 A GUI opens up. 
 Type 'id' and click 'EXE', don't press enter, it closes the dialog (yeah ...).
@@ -38,7 +39,7 @@ because of that you may have to click 'OFF' and then 'ON' after a server restart
 Bug with calling minetest.* functions from coroutines hinders use of minetest.get_objects_inside_radius() in userspace.
 
 ##Roadmap:
-###Core:
+- Core:
   - Making sure minetest.* function can be savely called through coroutines (see current problems).
   - Make recipes and crafting-hooks for computer and drone nodes.
   - Make drone diggable
@@ -47,7 +48,7 @@ Bug with calling minetest.* functions from coroutines hinders use of minetest.ge
   - Real GUI with charbased input in good refresh-rate.
   - Better shell, based on a better GUI. with color, and settable cursor-position, redraws...
   - Wrapping more important functions like load* and do*
-###APIs:
+- APIs:
 See http://computercraft.info/wiki/Category:APIs
 The mose important ones are:
   - io/os/fs - the should use lfs.* and _makePath to provide save, sandboxed access to files and filesystem
@@ -56,11 +57,11 @@ The mose important ones are:
   - drone - this contains the drone-specific functions like movement, inventory access.
   - math/vector/string/bit... 
   - any other usefull api you can think of
-###CMDs:
+- CMDs:
   - A set of basic fs commands, like ls,cp,rm,mv ...
   - Other commands one expects from a OS like beep,reboot,shutdown,time...
   - Cool stuff
-###Misc:
+- Misc:
   - A model with "wield-points" for tools and peripherals.
   - Textures
   - Sounds (like, beeep)
