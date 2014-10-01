@@ -672,6 +672,7 @@ local function printTable(t,filter,invertFilter,printfunc)
 		end
 	end
 end
+--[[
 minetest.register_globalstep(function(dtime)
 	local p = minetest.get_player_by_name("singleplayer")
 	if not p then return end
