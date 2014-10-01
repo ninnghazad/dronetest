@@ -70,8 +70,10 @@ The mose important ones are:
   - Some good tutorials
 
 This list is constantly changing, so don't rely on it and communicate what you work on.
-
-###Pictures:
+  
+  
+  
+##Pictures:
 <img src="http://dunkelraum.net/share/screen1.jpg"/>
 <img src="http://dunkelraum.net/share/screen2.jpg"/>
 
