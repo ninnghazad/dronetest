@@ -40,11 +40,16 @@ Userspace cannot and must not ever access the minetest object, if that is possib
 APIs and commands are allowed to do so, because they have to be installed by the server's admin,  
 and are thusly deemed safe.
 
+Take note of:
+https://github.com/minetest/minetest/pull/1606
+http://mesecons.net/developers.php
+
 ###Current problems:
 - Bug with calling minetest.* functions from coroutines hinders use of minetest.get_objects_inside_radius() in userspace.
 This means you cannot get entities in user and api-space, so drones will drive through each other. minor annoyance.
 - Right now systems do not get automatically booted when server starts, somewhat on purpose to deal with nasty bugs.
 because of that you may have to click 'OFF' and then 'ON' after a server restart to continue using that system.
+
 
 ##Roadmap:
 Look around the source for examples on how to get stuff done.  
