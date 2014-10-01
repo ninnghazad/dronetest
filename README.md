@@ -34,6 +34,7 @@ Systems must not ever have access to anything outside that directory.
 The /rom directory does not physically lie withing the virtual systems' directories,   
 but rather shall be included then commands are parsed and directories are listed,   
 so that APIs can be read from userspace, commands executed from userspace, but neither changed.  
+Each API and each command goes in its own file.
 
 Userspace cannot and must not ever access the minetest object, if that is possible, something is wrong.
 APIs and commands are allowed to do so, because they have to be installed by the server's admin,  
@@ -59,7 +60,10 @@ Look around the source for examples on how to get stuff done.
 - APIs:
 See http://computercraft.info/wiki/Category:APIs
 The mose important ones are:
+  - sys is not really an api-file, but is created on the fly by the mod, and contains stuff like system's id and mod_name
   - io/os/fs - the should use lfs.* and _makePath to provide save, sandboxed access to files and filesystem
+    - for lfs.* api check https://keplerproject.github.io/luafilesystem/manual.html#introduction
+    - _makePath is supposed to catch all illegal paths, and must be used whenever a path is used with lfs or some input/output
   - testnet - a rednet-like api, will have to be mostly done in core
   - parallel/coroutine - this will be tricky to get sandboxed right, need to make sure no privilege escalation is possible
   - drone - this contains the drone-specific functions like movement, inventory access.
