@@ -15,8 +15,9 @@ Place it and rightclick it.
 A GUI opens up.   
 Type 'id' and click 'EXE', don't press enter, it closes the dialog (yeah ...).  
 Click 'DRW' to update the display and see results.  
-Also try 'time' or 'ls'. There are more commands, but see current problems.  
+Also try 'time' or 'ls'. There are more commands, like 'dance' for drones.
 
+###Infos:
 Commands and APIs have access to global and sandboxed environment,  
 global gets overwritten with sandboxed.  
 Sandboxed environment is what user can access through the virtual systems, 
