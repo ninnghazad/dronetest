@@ -9,7 +9,7 @@ function _makePath(path)
 		print("Illegal path: "..path.." ("..r..")")
 		return ""
 	end
-	--print("env: "..dump(sys))
+	print("env: "..dump(sys))
 	return mod_dir.."/"..sys.id.."/"..path
 end
 
@@ -57,6 +57,7 @@ end
 
 fs.makeDir = function(path)
 	local p = _makePath(path)
+	print("fs.makeDir('"..path.."'): "..p)
 	if p == "" then return false,"illegal path '"..path.."'" end
 	local r,err = lfs.mkdir(p)
 	if not r then print(sys.id.." Could not create directory '"..path.."': "..err) return false,err end

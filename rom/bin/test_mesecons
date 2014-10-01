@@ -1,0 +1,19 @@
+-- check if mesecons node above computer/drone is on/off
+
+local pos = active_systems[sys.id].pos
+local dir = 5 -- up
+local npos = minetest.facedir_to_dir(dir)
+
+npos.x = pos.x
+npos.y = pos.y + 1
+npos.z = pos.z
+
+local node = minetest.get_node(npos)
+
+print(dump(node))
+if node.name:split("_")[1]:split(":")[1] ~= "mesecons" then print("not a mesecons node!") return false end
+if node.name:split("_")[3] == nil then print("no on/off status!") return false end
+
+print("node is "..node.name:split("_")[3])
+
+return true

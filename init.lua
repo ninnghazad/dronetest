@@ -410,13 +410,6 @@ function sys:sendEvent(event)
 	return events.send_by_id(self.id,event)
 end
 
-function _makePath(path)
-	if string.find(path,"..") then
-		return ""
-	end
-	
-	return mod_dir.."/"..sys.id.."/"..path
-end
 
 -- Gets an API as a string, used only wrapped in bootstrap.lua
 -- TODO: is it possible to overload this from userspace? make sure it isn't
@@ -490,7 +483,8 @@ function timeout()
 	coroutine.yield()
 end
 
-local function activate_by_id(id,t)
+local function activate_by_id(id,t,pos)
+	if pos == nil then pos = {x=0,y=0,z=0} end
 	if t == nil then t = "drone" end
 	-- http://lua-users.org/wiki/SandBoxes
 	local env = table.copy(userspace_environment)
@@ -527,7 +521,7 @@ local function activate(pos)
 	local meta = minetest.get_meta(pos)
 	local id = meta:get_int("id")
 	meta:set_int("status",1)
-	return activate_by_id(id,"computer")
+	return activate_by_id(id,"computer",pos)
 end
 
 local function deactivate_by_id(id)
@@ -611,6 +605,7 @@ minetest.register_on_player_receive_fields(function(player, formname, fields)
 				end	
 			end
 		end
+		save()
 	end
 	return true
 end)
@@ -696,18 +691,18 @@ end)
 --]]
 
 minetest.register_abm({
-	nodenames = {"dronetest:drone"},
+	nodenames = {"dronetest:computer"},
 	interval = 1,
 	chance = 1,
 	action = function(pos)
 		local meta = minetest.get_meta(pos)
-		-- make sure nodes that where active are reactivated on server start
+		-- make sure nodes that where active are reactivated on server start and after crashes
 		if meta:get_int("status") == 1 and active_systems[meta:get_int("id")] == nil then
 			activate(pos)
 		end
 	end,
 })
-	
+
 
 
 
@@ -801,6 +796,7 @@ function drone.on_activate(self, staticdata, dtime_s)
 	
 	-- TODO: we need to somehow remove these when drones get removed, but there is no on_deactivate handler yet i think
 	table.insert(dronetest.drones,self.id,self)
+	save()
 end
 
 function drone.get_staticdata(self)
@@ -854,12 +850,13 @@ minetest.register_node("dronetest:drone", {
 
 minetest.register_node("dronetest:computer", {
 	description = "A computer.",
-	tiles = {"computerTop.png", "computerTop.png", "computerSide.png", "computerSide.png", "computerSide.png", "computerFront.png"},
+	tiles = {"computerTop.png", "computerTop.png", "computerSide.png", "computerSide.png", "computerSide.png", "computerFrontOn.png"},
 	paramtype2 = "facedir",
 	groups = {choppy=2,oddly_breakable_by_hand=2},
 	legacy_facedir_simple = true,
 	is_ground_content = false,
 	sounds = default.node_sound_wood_defaults(),
+	
 	on_construct = function(pos)
 		dronetest.last_id = dronetest.last_id + 1
 		local meta = minetest.get_meta(pos)
@@ -869,6 +866,7 @@ minetest.register_node("dronetest:computer", {
 		meta:set_int("status",0)
 		mkdir(mod_dir.."/"..dronetest.last_id)
 		dronetest.log("Computer #"..dronetest.last_id.." constructed at "..minetest.pos_to_string(pos))		
+		save()
 	end,
 	on_destruct = function(pos, oldnode)
 		deactivate(pos)

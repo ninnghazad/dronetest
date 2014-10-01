@@ -34,7 +34,7 @@ shell = sys.loadApi("shell")
 
 
 -- Lock the doors!
-_G = getfenv(1)
+--_G = getfenv(1)
 require = nil
 load = nil
 loadfile = nil
@@ -56,7 +56,9 @@ rawequal = nil
 local id = getId()
 sys.id = id
 
-print("Finished booting, dropping to shell.")
+if not fs.isDir("./") then fs.makeDir("./") end
+
+print("Finished booting #"..sys.id..", dropping to shell.")
 -- Clear screen
 term.clear()
 if fs.isFile("startup") then

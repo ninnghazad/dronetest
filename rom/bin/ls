@@ -2,5 +2,6 @@
 -- lists directory contents
 local dir = "./"
 if argv[1] ~= nil then dir = argv[1] end
+print("list directory "..dir)
 print(dump(fs.list(dir)))
 return true

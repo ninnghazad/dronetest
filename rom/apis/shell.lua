@@ -12,15 +12,28 @@ function shell.errorHandler(err,level)
 	print("ERROR @ "..err)
 end
 function shell.run(cmd,argv)
+	local env = getfenv(2)
 	-- TODO: write real cli parser
 	local f,err = loadfile(mod_dir.."/rom/bin/"..cmd)
-	print("shell.run: "..mod_dir.."/rom/bin/"..cmd)
+	
 	if f == nil then
-		print("ERROR: no such file or buggy file '"..cmd.."': "..err)
-		return false
+		f,err = loadfile(mod_dir.."/"..sys.id.."/"..cmd)
+		if f == nil then
+			print("ERROR: no such file or buggy file '"..cmd.."': "..err)
+			return false
+		end
+		print("shell.run from home: "..mod_dir.."/"..sys.id.."/"..cmd)
+		-- Make sure we don't give API's environment to userspace function
+		--env = getfenv(2)
+	else
+		print("shell.run from rom: "..mod_dir.."/rom/bin/"..cmd)
+		
+		local env_global = getfenv(1)
+		for k,v in pairs(env_global) do 
+			if env[k] == nil then env[k] = v end 
+		end
 	end
-	-- Make sure we don't give API's environment to userspace function
-	local env = getfenv(2)
+	
 	env.argv = argv
 	setfenv(f,env)
 	jit.off(f,true)
