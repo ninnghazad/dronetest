@@ -21,6 +21,7 @@ package.cpath = package.cpath
 
 lfs = require("lfs")
 
+--debug
 mt = minetest
 function get_objects(pos,radius)
 --	print("get_objects: "..dump(pos).." "..radius)
@@ -33,7 +34,7 @@ function get_objects(pos,radius)
 end
 
 setfenv(get_objects,getfenv(0))
-
+--enddebug
 
 --[[
 local maxInst = 1000000
@@ -591,7 +592,7 @@ minetest.register_on_player_receive_fields(function(player, formname, fields)
 	-- handle computer's menu in node's handler
 	elseif formname == "dronetest:computer" then -- apply config changes from menu
 		dronetest.log("skipping handler for computer")
-		return false
+		return true
 		
 	-- apply config changes from config-menu
 	elseif formname == "dronetest:menu" then 
