@@ -856,7 +856,12 @@ minetest.register_node("dronetest:computer", {
 	legacy_facedir_simple = true,
 	is_ground_content = false,
 	sounds = default.node_sound_wood_defaults(),
-	
+	mesecons = {effector = {
+	--	rules = mesecon.rules,
+		action_on = function (pos, node) print("mesecons on signal") end,
+		action_off = function (pos, node) print("mesecons off signal") end,
+		action_change = function (pos, node) print("mesecons toggle signal") end,
+	}},
 	on_construct = function(pos)
 		dronetest.last_id = dronetest.last_id + 1
 		local meta = minetest.get_meta(pos)
