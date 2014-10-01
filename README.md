@@ -8,29 +8,30 @@ This is not ready for use.
 <img src="http://dunkelraum.net/share/screen0.jpg"/>
 
 ###How to use:
-Install in mods/ as "dronetest". 
-Type '/giveme dronetest:computer' to get a computer,
-'/giveme dronetest:computer' to get a drone-spawner.
-Place it and rightclick it. 
-A GUI opens up. 
-Type 'id' and click 'EXE', don't press enter, it closes the dialog (yeah ...).
-Click 'DRW' to update the display and see results.
-Also try 'time' or 'ls'. There are more commands, but see current problems.
+Install in mods/ as "dronetest".  
+Type '/giveme dronetest:computer' to get a computer,  
+'/giveme dronetest:computer' to get a drone-spawner.  
+Place it and rightclick it.   
+A GUI opens up.   
+Type 'id' and click 'EXE', don't press enter, it closes the dialog (yeah ...).  
+Click 'DRW' to update the display and see results.  
+Also try 'time' or 'ls'. There are more commands, but see current problems.  
 
-Commands and APIs have access to global and sandboxed environment, global gets overwritten with sandboxed.
-Sandboxed environment is what user can access through the virtual systems, it is called 'sys' in userspace.
-Userspace is the sandboxed environment the usercode runs in.
+Commands and APIs have access to global and sandboxed environment,  
+global gets overwritten with sandboxed.  
+Sandboxed environment is what user can access through the virtual systems, it is called 'sys' in userspace.  
+Userspace is the sandboxed environment the usercode runs in.  
 
-/rom is read-only
-/rom/apis contains all APIs
-/rom/bin contains all commands
-/ contains users data
+/rom is read-only  
+/rom/apis contains all APIs  
+/rom/bin contains all commands  
+/ contains users data  
 
-Each virtual system is assigned a real folder on the server, within the mods folder, named by its id (sys.id).
-Systems must not ever have access to anything outside that directory.
-The /rom directory does not physically lie withing the virtual systems' directories, 
-but rather shall be included then commands are parsed and directories are listed, 
-so that APIs can be read from userspace, commands executed from userspace, but neither changed.
+Each virtual system is assigned a real folder on the server, within the mods folder, named by its id (sys.id).  
+Systems must not ever have access to anything outside that directory.  
+The /rom directory does not physically lie withing the virtual systems' directories,   
+but rather shall be included then commands are parsed and directories are listed,   
+so that APIs can be read from userspace, commands executed from userspace, but neither changed.  
 
 right now systems do not get automatically booted when server starts, somewhat on purpose to deal with nasty bugs.
 because of that you may have to click 'OFF' and then 'ON' after a server restart to continue using that system.
