@@ -858,6 +858,8 @@ minetest.register_node("dronetest:computer", {
 	sounds = default.node_sound_wood_defaults(),
 	mesecons = {effector = {
 	--	rules = mesecon.rules,
+		-- make mesecons.rule so we can use some sides of the node as input, and some as output?
+		-- or should we make a special peripheral for that an the computers/drones can just be switched on with meseconsian energy?
 		action_on = function (pos, node) print("mesecons on signal") end,
 		action_off = function (pos, node) print("mesecons off signal") end,
 		action_change = function (pos, node) print("mesecons toggle signal") end,
