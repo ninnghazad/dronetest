@@ -19,13 +19,14 @@ Also try 'time' or 'ls'. There are more commands, but see current problems.
 
 Commands and APIs have access to global and sandboxed environment,  
 global gets overwritten with sandboxed.  
-Sandboxed environment is what user can access through the virtual systems, it is called 'sys' in userspace.  
-Userspace is the sandboxed environment the usercode runs in.  
+Sandboxed environment is what user can access through the virtual systems, 
+functions, files, variables and so on. 
+That sandboxed env. is called userspace and is accessible for the user through the "sys" object. 
 
 /rom is read-only  
 /rom/apis contains all APIs  
 /rom/bin contains all commands  
-/ contains users data  
+/ contains system's data  
 
 Each virtual system is assigned a real folder on the server, within the mods folder, named by its id (sys.id).  
 Systems must not ever have access to anything outside that directory.  
@@ -33,13 +34,18 @@ The /rom directory does not physically lie withing the virtual systems' director
 but rather shall be included then commands are parsed and directories are listed,   
 so that APIs can be read from userspace, commands executed from userspace, but neither changed.  
 
-right now systems do not get automatically booted when server starts, somewhat on purpose to deal with nasty bugs.
-because of that you may have to click 'OFF' and then 'ON' after a server restart to continue using that system.
+Userspace cannot and must not ever access the minetest object, if that is possible, something is wrong.
+APIs and commands are allowed to do so, because they have to be installed by the server's admin,  
+and are thusly deemed safe.
 
 ###Current problems:
-Bug with calling minetest.* functions from coroutines hinders use of minetest.get_objects_inside_radius() in userspace.
+- Bug with calling minetest.* functions from coroutines hinders use of minetest.get_objects_inside_radius() in userspace.
+This means you cannot get entities in user and api-space, so drones will drive through each other. minor annoyance.
+- Right now systems do not get automatically booted when server starts, somewhat on purpose to deal with nasty bugs.
+because of that you may have to click 'OFF' and then 'ON' after a server restart to continue using that system.
 
 ##Roadmap:
+Look around the source for examples on how to get stuff done.  
 - Core:
   - Making sure minetest.* function can be savely called through coroutines (see current problems).
   - Make recipes and crafting-hooks for computer and drone nodes.
