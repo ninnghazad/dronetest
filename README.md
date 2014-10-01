@@ -55,8 +55,9 @@ because of that you may have to click 'OFF' and then 'ON' after a server restart
 Look around the source for examples on how to get stuff done.  
 - Core:
   - Making sure minetest.* function can be savely called through coroutines (see current problems).
+  - Drones need to spawn an invisible node when standing still, so we can interface them with other nodes, like mesecons stuff.
   - Make recipes and crafting-hooks for computer and drone nodes.
-  - Make drone diggable
+  - Make drone diggable.
   - Integrate networking in event-queue.
   - Better command-parser, with autocomplete.
   - Real GUI with charbased input in good refresh-rate.
