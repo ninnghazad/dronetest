@@ -42,6 +42,7 @@ and are thusly deemed safe.
 
 Take note of:
 https://github.com/minetest/minetest/pull/1606
+http://mesecons.net/developers.php
 
 ###Current problems:
 - Bug with calling minetest.* functions from coroutines hinders use of minetest.get_objects_inside_radius() in userspace.
