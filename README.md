@@ -3,6 +3,8 @@ DRONETEST
 
 A computer-themed mod for the game minetest, heavily inspired by ComputerCraft.
 
+## >> USE TRUNK BRANCH FOR DEVELOPMENT <<
+
 This is not ready for use.
 
 <img src="http://dunkelraum.net/share/screen0.jpg"/>
