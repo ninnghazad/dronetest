@@ -668,8 +668,9 @@ local function printTable(t,filter,invertFilter,printfunc)
 		end
 	end
 end
---[[
+---[[
 minetest.register_globalstep(function(dtime)
+	print("TEST -1: "..minetest.get_gametime())
 	local p = minetest.get_player_by_name("singleplayer")
 	if not p then return end
 	
@@ -690,6 +691,7 @@ minetest.register_globalstep(function(dtime)
 end)
 --]]
 
+-- TODO: rather expensive just for waking up the systems, find other way
 minetest.register_abm({
 	nodenames = {"dronetest:computer"},
 	interval = 1,
