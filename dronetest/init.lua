@@ -84,6 +84,10 @@ end
 print("ok")
 --jit.on()
 --]]
+
+
+
+
 function is_filename(filename)
 	if string.find(filename,"..",1,true) ~= nil then
 		return false
@@ -129,6 +133,118 @@ dronetest = {
 	drones = {},
 	log = function(msg) minetest.log("action","dronetest: "..msg) end,
 }
+
+-- CONSTANTS
+local LCD_WITH = 640
+local LCD_PADDING = 80
+
+local LINE_LENGTH = 80
+local NUMBER_OF_LINES = 33
+
+local LINE_HEIGHT = 12
+local CHAR_WIDTH = 5
+--local CHAR_WIDTH = 36
+
+local chars_file = io.open(minetest.get_modpath("dronetest").."/characters", "r")
+local charmap = {}
+local max_chars = 80
+if not chars_file then
+	print("[dronetest] E: character map file not found")
+else
+	while true do
+		local char = chars_file:read("*l")
+		if char == nil then
+			break
+		end
+		local img = chars_file:read("*l")
+		chars_file:read("*l")
+		charmap[char] = img
+	end
+end
+
+dronetest.create_lines = function(text)
+	local line = ""
+	local line_num = 1
+	local tab = {}
+	local pre
+	local post = ""
+	local lines = {}
+	for _,word in ipairs(text:split("\n")) do
+	
+		
+		pre = word:sub(1,LINE_LENGTH)
+		table.insert(lines,pre)
+		post = word:sub(LINE_LENGTH+1)
+		
+		while post:len() > LINE_LENGTH do
+			word = post:sub(1,LINE_LENGTH)
+			table.insert(lines,word)
+			post = post:sub(LINE_LENGTH+1)
+		end
+		if post ~= "" then
+			table.insert(lines,post)
+		end
+		
+	end
+	for _,word in ipairs(lines) do
+			line = word
+			table.insert(tab, line)
+			line_num = line_num+1
+			if line_num > NUMBER_OF_LINES then
+				return tab
+			end
+		--end
+	end
+	--table.insert(tab, line)
+	return tab
+end
+
+dronetest.generate_texture = function(lines)
+	local texture = "[combine:"..LCD_WITH.."x"..LCD_WITH..":0,0=screen.png"
+	local ypos = LCD_PADDING
+	for i = 1, #lines do
+		texture = texture..dronetest.generate_line(lines[i], ypos)
+		ypos = ypos + LINE_HEIGHT
+	end
+	--print(texture)
+	return texture
+end
+
+dronetest.generate_line = function(s, ypos)
+	local i = 1
+	local parsed = {}
+	local width = 0
+	local chars = 0
+	while chars < max_chars and i <= #s do
+		local file = nil
+		if charmap[s:sub(i, i)] ~= nil then
+			file = charmap[s:sub(i, i)]
+			i = i + 1
+		elseif i < #s and charmap[s:sub(i, i + 1)] ~= nil then
+			file = charmap[s:sub(i, i + 1)]
+			i = i + 2
+		else
+			print("[dronetest] W: unknown symbol in '"..s.."' at "..i)
+			i = i + 1
+		end
+		if file ~= nil then
+			width = width + CHAR_WIDTH
+			table.insert(parsed, file)
+			chars = chars + 1
+		end
+	end
+	width = width - 1
+
+	local texture = ""
+	local xpos = math.floor((LCD_WITH - 2 * LCD_PADDING - width) / 2 + LCD_PADDING)
+	xpos = LCD_PADDING --?
+	for i = 1, #parsed do
+		texture = texture..":"..xpos..","..ypos.."=dronetest"..parsed[i]..".png"
+		xpos = xpos + CHAR_WIDTH + 1
+	end
+	
+	return texture
+end
 
 --Config documentation, items that have one get save in config and can be changed by menu
 local doc = {
@@ -508,7 +624,7 @@ local function activate_by_id(id,t,pos)
 	local cr = coroutine.create(function() xpcall(bootstrap,error_handler) end)
 	--debug.sethook(cr,function () coroutine.yield() end,"",100)
 	
-	active_systems[id] = {coroutine_handle = cr,events = {},id=id,pos=pos,last_update = minetest.get_gametime()}
+	active_systems[id] = {coroutine_handle = cr,events = {},type=t,id=id,pos=pos,last_update = minetest.get_gametime()}
 	
 	dronetest.log("STATUS: "..coroutine.status(active_systems[id].coroutine_handle))
 	dronetest.log("TYPE: "..type(active_systems[id]))
@@ -630,6 +746,7 @@ minetest.register_globalstep(function(dtime)
 				debug.sethook(co,coroutine.yield,"",1000000)
 				coroutine.resume(co)
 				s.last_update = minetest.get_gametime()
+				
 			else
 				-- System ended
 				dronetest.log("System #"..id.."'s main process has endet! Restarting soon...")
@@ -765,7 +882,7 @@ minetest.register_abm({
 	end,
 })
 
-
+local testScreen = "12345678901234567890123456789012345678901234567890123456789012345678901234567890\n2\n3\n4\n5\n6\n7\n8\n9\n0                             HELLOW WORLD!\n1\n2\n3\n4\n5\n6\n7\n8\n9\n0\n1\n2\n3\n4\n5\n6\n7\n8\n9\n0\n1\n2\n"
 
 
 local drone = {
@@ -778,7 +895,7 @@ local drone = {
 	visual = "cube",
 	visual_size = {x=0.9, y=0.9},
 	--tiles = {"computerTop.png", "computerTop.png", "computerSide.png", "computerSide.png", "computerSide.png", "turtle.png"},
-	textures = {"computerTop.png", "computerTop.png", "computerSide.png", "computerSide.png", "computerSide.png", "turtle.png"},
+	textures = {"computerTop.png", "computerTop.png", "computerSide.png", "computerSide.png", dronetest.generate_texture(dronetest.create_lines(testScreen)), "turtle.png"},
 	
         --visual = "mesh",
 	--visual_size = {x=0.5, y=0.5},
@@ -856,6 +973,7 @@ function drone.on_activate(self, staticdata, dtime_s)
 	self.object:setyaw(self.yaw)
 	print("Add drone "..self.id.." to list.")
 	
+	
 	-- TODO: we need to somehow remove these when drones get removed, but there is no on_deactivate handler yet i think
 	table.insert(dronetest.drones,self.id,self)
 	save()
@@ -882,9 +1000,16 @@ function drone.on_punch(self, puncher, time_from_last_punch, tool_capabilities, 
         if not puncher or not puncher:is_player() or self.removed then
                 return
         end
+--	local tmp = table.copy(drone)
+--	tmp.textures = {"computerTop.png", "computerTop.png", "computerSide.png", "computerSide.png", dronetest.generate_texture(dronetest.create_lines(testScreen.."\n"..minetest.get_gametime())), "turtle.png"}
+--	self.object:set_properties(tmp)
 end
 
 function drone.on_step(self, dtime)
+	local text = history_list(self.id)
+	local tmp = table.copy(drone)
+	tmp.textures = {"computerTop.png", "computerTop.png", "computerSide.png", "computerSide.png", dronetest.generate_texture(dronetest.create_lines(text)), "turtle.png"}
+	self.object:set_properties(tmp)
 
 end
 
@@ -908,11 +1033,60 @@ minetest.register_node("dronetest:drone", {
 		return false
 	end,
 })
+
+local lcds = {
+	-- on ceiling
+	--* [0] = {delta = {x = 0, y = 0.4, z = 0}, pitch = math.pi / -2},
+	-- on ground
+	--* [1] = {delta = {x = 0, y =-0.4, z = 0}, pitch = math.pi /  2},
+	-- sides
+	[2] = {delta = {x =  0.501, y = 0, z = 0}, yaw = math.pi / 2},
+	[3] = {delta = {x = -0.501, y = 0, z = 0}, yaw = math.pi /  -2},
+	[4] = {delta = {x = 0, y = 0, z =  0.501}, yaw = 0},
+	[5] = {delta = {x = 0, y = 0, z = -0.501}, yaw = math.pi},
+}
+
+local clearscreen = function(pos)
+	local lcd_info = lcds[minetest.get_node(pos).param2]
 	
+	if lcd_info == nil then return end
+	local npos = table.copy(pos)
+	npos.x = npos.x + lcd_info.delta.x
+	npos.y = npos.y + lcd_info.delta.y
+	npos.z = npos.z + lcd_info.delta.z
+
+	local objects = minetest.get_objects_inside_radius(npos, 0.1)
+	for _, o in ipairs(objects) do
+		if o:get_entity_name() == "dronetest:display" then
+			o:remove()
+		end
+	end
+end
+
+local prepare_writing = function(pos)
+	lcd_info = lcds[minetest.get_node(pos).param2]
+	if lcd_info == nil then return end
+	local text = minetest.add_entity(
+		{x = pos.x + lcd_info.delta.x,
+		 y = pos.y + lcd_info.delta.y,
+		 z = pos.z + lcd_info.delta.z}, "dronetest:display")
+	text:setyaw(lcd_info.yaw or 0)
+	local prop = {id=minetest.get_meta(pos):get_int("id")}
+	print(dump(prop))
+	text:set_properties(prop)
+	--text.id = minetest.get_meta(pos):get_int("id")
+	--* text:setpitch(lcd_info.yaw or 0)
+	return text
+end
 
 minetest.register_node("dronetest:computer", {
 	description = "A computer.",
-	tiles = {"computerTop.png", "computerTop.png", "computerSide.png", "computerSide.png", "computerSide.png", "computerFrontOn.png"},
+	--tiles = {"computerTop.png", "computerTop.png", "computerSide.png", "computerSide.png", "computerSide.png", dronetest.generate_texture(dronetest.create_lines(testScreen))},
+	tiles = {"computerTop.png", "computerTop.png", "computerSide.png", "computerSide.png", "computerTop.png", "computerSide.png"},
+	
+	paramtype = "light",
+	sunlight_propagates = true,
+	light_source = 6,
 	paramtype2 = "facedir",
 	groups = {choppy=2,oddly_breakable_by_hand=2},
 	legacy_facedir_simple = true,
@@ -939,6 +1113,7 @@ minetest.register_node("dronetest:computer", {
 	end,
 	on_destruct = function(pos, oldnode)
 		deactivate(pos)
+		clearscreen(pos)
 	end,
 	on_receive_fields = function(pos, formname, fields, sender)
 		local meta = minetest.get_meta(pos)
@@ -984,10 +1159,15 @@ minetest.register_node("dronetest:computer", {
 
 	end,
 	on_punch = function(pos, node, puncher, pointed_thing)
-		dronetest.log("Computer #"..dronetest.last_id.." has been punched at "..minetest.pos_to_string(pos))
+		dronetest.log("Computer has been punched at "..minetest.pos_to_string(pos))
 	end,
 	after_place_node = function(pos, placer, itemstack, pointed_thing)
-		dronetest.log("Computer #"..dronetest.last_id.." placed at "..minetest.pos_to_string(pos))
+		dronetest.log("Computer placed at "..minetest.pos_to_string(pos))
+		local param2 = minetest.get_node(pos).param2
+		if param2 == 0 or param2 == 1 then
+			minetest.add_node(pos, {name = "dronetest:computer", param2 = 3})
+		end
+		prepare_writing(pos)
 	end,
 	can_dig = function(pos,player)
 		-- Diggable only if deactivated
@@ -998,6 +1178,36 @@ minetest.register_node("dronetest:computer", {
 	end,
 })
 	
+minetest.register_entity("dronetest:display", {
+	collisionbox = { 0, 0, 0, 0, 0, 0 },
+	visual = "upright_sprite",
+	textures = {},
+	id = -2,
+	on_activate = function(self, staticdata, dtime_s)
+		if type(staticdata) == "string" and #staticdata > 0 then
+			local data = minetest.deserialize(staticdata)
+			self.id = data.id
+		else 
+			self.id = dronetest.last_id
+		end
+		print("on_activate: "..self.id)
+		local text = history_list(id)
+		self.object:set_properties({textures={dronetest.generate_texture(dronetest.create_lines(text))}})
+	end,
+	get_staticdata= function(self)
+		local data = {}
+		data.id = self.id
+		return minetest.serialize(data)
+	end,
+
+	on_step = function(self, dtime)
+		
+		if active_systems[self.id] == nil then return false end
+		local text = history_list(self.id)
+		self.object:set_properties({textures={dronetest.generate_texture(dronetest.create_lines(text))}})
+	end
+})
+
 -- Some message that the mod has loaded/unloaded
 if minetest.setting_getbool("log_mods") then
 	minetest.register_on_shutdown(function() minetest.log("action", "[MOD] "..mod_name.." -- unloaded!") end)
