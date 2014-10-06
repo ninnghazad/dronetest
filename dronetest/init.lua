@@ -919,6 +919,7 @@ end
 local rad2unit = 1 / (2*3.14159265359)
 function drone.on_activate(self, staticdata, dtime_s)
         self.object:set_armor_groups({immortal=1})
+	local pos = self.object:getpos()
         if type(staticdata) == "string" and #staticdata > 0 then
 		
 		local data = minetest.deserialize(staticdata)
@@ -947,6 +948,8 @@ function drone.on_activate(self, staticdata, dtime_s)
 		self.status = 0
 		self.yaw = 0
 		print("activate drone "..self.id.." ..")
+		
+		minetest.add_node(pos,"dronetest:drone_virtual")
         end
 	if type(self.yaw) ~= "number" then self.yaw = 0 end
 	
@@ -965,7 +968,7 @@ function drone.on_activate(self, staticdata, dtime_s)
 	self.inv = inv
 	
 	-- align position with grid
-	local pos = self.object:getpos()
+	
 	pos.x = math.floor(pos.x)
 	pos.y = math.floor(pos.y)
 	pos.z = math.floor(pos.z)
@@ -1014,6 +1017,7 @@ function drone.on_step(self, dtime)
 end
 
 minetest.register_entity("dronetest:drone", drone)
+--minetest.registered_entities["dronetest:drone"].
 
 -- Helper-node which does nothing but spawn a drone entity, so drones can be crafted?!?
 minetest.register_node("dronetest:drone", {
@@ -1028,6 +1032,22 @@ minetest.register_node("dronetest:drone", {
 		dronetest.log("Drone spawner placed at "..minetest.pos_to_string(pos))
 		minetest.add_entity(pos,"dronetest:drone")
 		minetest.remove_node(pos)
+	end,
+	can_dig = function(pos,player)
+		return false
+	end,
+})
+
+minetest.register_node("dronetest:drone_virtual", {
+	description = "This is the virtual part of a drone, this is not meant for players.",
+	tiles = {},
+	paramtype2 = "facedir",
+	groups = {choppy=2,oddly_breakable_by_hand=2},
+	legacy_facedir_simple = true,
+	is_ground_content = false,
+	sounds = default.node_sound_wood_defaults(),
+	after_place_node = function(pos, placer, itemstack, pointed_thing)
+		dronetest.log("Drone-virtual placed at "..minetest.pos_to_string(pos))
 	end,
 	can_dig = function(pos,player)
 		return false
@@ -1092,6 +1112,14 @@ minetest.register_node("dronetest:computer", {
 	legacy_facedir_simple = true,
 	is_ground_content = false,
 	sounds = default.node_sound_wood_defaults(),
+	
+	
+	digiline = {
+		receptor = {},
+		effector = {
+			-- action = on_digiline_receive
+		},
+	},
 	mesecons = {effector = {
 	--	rules = mesecon.rules,
 		-- make mesecons.rule so we can use some sides of the node as input, and some as output?
