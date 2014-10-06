@@ -131,120 +131,10 @@ dronetest = {
 	last_id = 0,
 	globalstep_interval = 0.01,
 	drones = {},
+	max_userspace_instructions = 1000000,
 	log = function(msg) minetest.log("action","dronetest: "..msg) end,
 }
 
--- CONSTANTS
-local LCD_WITH = 640
-local LCD_PADDING = 80
-
-local LINE_LENGTH = 80
-local NUMBER_OF_LINES = 33
-
-local LINE_HEIGHT = 12
-local CHAR_WIDTH = 5
---local CHAR_WIDTH = 36
-
-local chars_file = io.open(minetest.get_modpath("dronetest").."/characters", "r")
-local charmap = {}
-local max_chars = 80
-if not chars_file then
-	print("[dronetest] E: character map file not found")
-else
-	while true do
-		local char = chars_file:read("*l")
-		if char == nil then
-			break
-		end
-		local img = chars_file:read("*l")
-		chars_file:read("*l")
-		charmap[char] = img
-	end
-end
-
-dronetest.create_lines = function(text)
-	local line = ""
-	local line_num = 1
-	local tab = {}
-	local pre
-	local post = ""
-	local lines = {}
-	for _,word in ipairs(text:split("\n")) do
-	
-		
-		pre = word:sub(1,LINE_LENGTH)
-		table.insert(lines,pre)
-		post = word:sub(LINE_LENGTH+1)
-		
-		while post:len() > LINE_LENGTH do
-			word = post:sub(1,LINE_LENGTH)
-			table.insert(lines,word)
-			post = post:sub(LINE_LENGTH+1)
-		end
-		if post ~= "" then
-			table.insert(lines,post)
-		end
-		
-	end
-	for _,word in ipairs(lines) do
-			line = word
-			table.insert(tab, line)
-			line_num = line_num+1
-			if line_num > NUMBER_OF_LINES then
-				return tab
-			end
-		--end
-	end
-	--table.insert(tab, line)
-	return tab
-end
-
-dronetest.generate_texture = function(lines)
-	local texture = "[combine:"..LCD_WITH.."x"..LCD_WITH..":0,0=screen.png"
-	local ypos = LCD_PADDING
-	for i = 1, #lines do
-		texture = texture..dronetest.generate_line(lines[i], ypos)
-		ypos = ypos + LINE_HEIGHT
-	end
-	--print(texture)
-	return texture
-end
-
-dronetest.generate_line = function(s, ypos)
-	local i = 1
-	local parsed = {}
-	local width = 0
-	local chars = 0
-	while chars < max_chars and i <= #s do
-		local file = nil
-		if charmap[s:sub(i, i)] ~= nil then
-			file = charmap[s:sub(i, i)]
-			i = i + 1
-		elseif i < #s and charmap[s:sub(i, i + 1)] ~= nil then
-			file = charmap[s:sub(i, i + 1)]
-			i = i + 2
-		else
-			print("[dronetest] W: unknown symbol in '"..s.."' at "..i)
-			i = i + 1
-		end
-		if file ~= nil then
-			width = width + CHAR_WIDTH
-			table.insert(parsed, file)
-			chars = chars + 1
-		end
-	end
-	width = width - 1
-
-	local texture = ""
-	local xpos = math.floor((LCD_WITH - 2 * LCD_PADDING - width) / 2 + LCD_PADDING)
-	xpos = LCD_PADDING --?
-	for i = 1, #parsed do
-		texture = texture..":"..xpos..","..ypos.."=dronetest"..parsed[i]..".png"
-		xpos = xpos + CHAR_WIDTH + 1
-	end
-	
-	return texture
-end
 
 --Config documentation, items that have one get save in config and can be changed by menu
 local doc = {
@@ -449,15 +339,16 @@ function dronetest.print(id,msg)
 		console_histories[id] = {}
 	end
 	table.insert(console_histories[id],minetest.formspec_escape(msg))
+	
+--	if active_systems[id] ~= nil then
+--		digiline:receptor_send(active_systems[id].pos, digiline.rules.default,"dronetest:computer:"..id, console_histories[id])
+--	end
 	dronetest.log("system "..id.." generated output: "..msg)
 end
 
--- TODO: maybe events need to be deep-copied with table.copy ?!
--- not sure if the way it is allows users to change an event and have it change for other users also
--- however, users should never-ever change the events they receive...
 events.send_by_id = function(id,event)
 	if active_systems[id] ~= nil then
-		table.insert(active_systems[id].events,event)
+		table.insert(active_systems[id].events,table.copy(event))
 	else
 		return false
 	end
@@ -641,9 +532,10 @@ local function activate(pos)
 end
 
 local function deactivate_by_id(id)
+	dronetest.print(id,"drone #"..id.." deactivating.")
 	active_systems[id] = nil
 	dronetest.log("Drone #"..id.." has been deactivated.")
-	dronetest.print(id,"drone #"..id.." has been deactivated.")
+	
 	return true
 end
 local function deactivate(pos)
@@ -737,13 +629,13 @@ minetest.register_globalstep(function(dtime)
 	local s
 	timer = timer + dtime;
 	if timer >= dronetest.globalstep_interval then
-		minetest.chat_send_all("dronetest globalstep @"..timer.." with "..count(active_systems).." systems.")
+		--minetest.chat_send_all("dronetest globalstep @"..timer.." with "..count(active_systems).." systems.")
 		for id,s in pairs(active_systems) do
 			co = s.coroutine_handle
 			--dronetest.log("Tic drone #"..id..". "..coroutine.status(co))
 			-- TODO: some kind of timeout?!
 			if coroutine.status(co) == "suspended" then
-				debug.sethook(co,coroutine.yield,"",1000000)
+				debug.sethook(co,coroutine.yield,"",dronetest.max_userspace_instructions)
 				coroutine.resume(co)
 				s.last_update = minetest.get_gametime()
 				
@@ -878,11 +770,14 @@ minetest.register_abm({
 		-- make sure nodes that where active are reactivated on server start and after crashes
 		if meta:get_int("status") == 1 and active_systems[meta:get_int("id")] == nil then
 			activate(pos)
+		elseif meta:get_int("status") == 1 then	
+			print("SEND")
+			digiline:receptor_send(pos, digiline.rules.default,"dronetest:computer:"..meta:get_int("id"),history_list(meta:get_int("id")))
 		end
 	end,
 })
 
-local testScreen = "12345678901234567890123456789012345678901234567890123456789012345678901234567890\n2\n3\n4\n5\n6\n7\n8\n9\n0                             HELLOW WORLD!\n1\n2\n3\n4\n5\n6\n7\n8\n9\n0\n1\n2\n3\n4\n5\n6\n7\n8\n9\n0\n1\n2\n"
+
 
 
 local drone = {
@@ -894,13 +789,7 @@ local drone = {
         collisionbox = {-0.5,-0.5,-0.5, 0.5,0.5,0.5},
 	visual = "cube",
 	visual_size = {x=0.9, y=0.9},
-	--tiles = {"computerTop.png", "computerTop.png", "computerSide.png", "computerSide.png", "computerSide.png", "turtle.png"},
-	textures = {"computerTop.png", "computerTop.png", "computerSide.png", "computerSide.png", dronetest.generate_texture(dronetest.create_lines(testScreen)), "turtle.png"},
-	
-        --visual = "mesh",
-	--visual_size = {x=0.5, y=0.5},
-        --mesh = "boat.x",
-        --textures = {"computerTop.png"},
+	textures = {"computerTop.png", "computerTop.png", "computerSide.png", "computerSide.png",  "turtle.png", "computerSide.png",},
 	automatic_rotate = false,
         driver = nil,
 	menu = false,
@@ -949,7 +838,7 @@ function drone.on_activate(self, staticdata, dtime_s)
 		self.yaw = 0
 		print("activate drone "..self.id.." ..")
 		
-		minetest.add_node(pos,"dronetest:drone_virtual")
+	--	minetest.add_node(pos,"dronetest:drone_virtual")
         end
 	if type(self.yaw) ~= "number" then self.yaw = 0 end
 	
@@ -1007,7 +896,7 @@ function drone.on_punch(self, puncher, time_from_last_punch, tool_capabilities, 
 --	tmp.textures = {"computerTop.png", "computerTop.png", "computerSide.png", "computerSide.png", dronetest.generate_texture(dronetest.create_lines(testScreen.."\n"..minetest.get_gametime())), "turtle.png"}
 --	self.object:set_properties(tmp)
 end
-
+--[[
 function drone.on_step(self, dtime)
 	local text = history_list(self.id)
 	local tmp = table.copy(drone)
@@ -1015,14 +904,15 @@ function drone.on_step(self, dtime)
 	self.object:set_properties(tmp)
 
 end
-
+--]]
 minetest.register_entity("dronetest:drone", drone)
 --minetest.registered_entities["dronetest:drone"].
 
--- Helper-node which does nothing but spawn a drone entity, so drones can be crafted?!?
+-- Helper-node which does nothing but spawn a drone entity, 
+-- this is what the player crafts in order to get a drone.
 minetest.register_node("dronetest:drone", {
 	description = "Spawns a drone.",
-	tiles = {"computerTop.png"},
+	tiles = {"computerTop.png", "computerTop.png", "computerSide.png", "computerSide.png", "computerSide.png", "turtle.png"},
 	paramtype2 = "facedir",
 	groups = {choppy=2,oddly_breakable_by_hand=2},
 	legacy_facedir_simple = true,
@@ -1040,7 +930,7 @@ minetest.register_node("dronetest:drone", {
 
 minetest.register_node("dronetest:drone_virtual", {
 	description = "This is the virtual part of a drone, this is not meant for players.",
-	tiles = {},
+	tiles = {""},
 	paramtype2 = "facedir",
 	groups = {choppy=2,oddly_breakable_by_hand=2},
 	legacy_facedir_simple = true,
@@ -1054,55 +944,11 @@ minetest.register_node("dronetest:drone_virtual", {
 	end,
 })
 
-local lcds = {
-	-- on ceiling
-	--* [0] = {delta = {x = 0, y = 0.4, z = 0}, pitch = math.pi / -2},
-	-- on ground
-	--* [1] = {delta = {x = 0, y =-0.4, z = 0}, pitch = math.pi /  2},
-	-- sides
-	[2] = {delta = {x =  0.501, y = 0, z = 0}, yaw = math.pi / 2},
-	[3] = {delta = {x = -0.501, y = 0, z = 0}, yaw = math.pi /  -2},
-	[4] = {delta = {x = 0, y = 0, z =  0.501}, yaw = 0},
-	[5] = {delta = {x = 0, y = 0, z = -0.501}, yaw = math.pi},
-}
-
-local clearscreen = function(pos)
-	local lcd_info = lcds[minetest.get_node(pos).param2]
-	
-	if lcd_info == nil then return end
-	local npos = table.copy(pos)
-	npos.x = npos.x + lcd_info.delta.x
-	npos.y = npos.y + lcd_info.delta.y
-	npos.z = npos.z + lcd_info.delta.z
-
-	local objects = minetest.get_objects_inside_radius(npos, 0.1)
-	for _, o in ipairs(objects) do
-		if o:get_entity_name() == "dronetest:display" then
-			o:remove()
-		end
-	end
-end
-
-local prepare_writing = function(pos)
-	lcd_info = lcds[minetest.get_node(pos).param2]
-	if lcd_info == nil then return end
-	local text = minetest.add_entity(
-		{x = pos.x + lcd_info.delta.x,
-		 y = pos.y + lcd_info.delta.y,
-		 z = pos.z + lcd_info.delta.z}, "dronetest:display")
-	text:setyaw(lcd_info.yaw or 0)
-	local prop = {id=minetest.get_meta(pos):get_int("id")}
-	print(dump(prop))
-	text:set_properties(prop)
-	--text.id = minetest.get_meta(pos):get_int("id")
-	--* text:setpitch(lcd_info.yaw or 0)
-	return text
-end
 
 minetest.register_node("dronetest:computer", {
 	description = "A computer.",
 	--tiles = {"computerTop.png", "computerTop.png", "computerSide.png", "computerSide.png", "computerSide.png", dronetest.generate_texture(dronetest.create_lines(testScreen))},
-	tiles = {"computerTop.png", "computerTop.png", "computerSide.png", "computerSide.png", "computerTop.png", "computerSide.png"},
+	tiles = {"computerTop.png", "computerTop.png", "computerSide.png", "computerSide.png", "computerTop.png","computerTop.png",},
 	
 	paramtype = "light",
 	sunlight_propagates = true,
@@ -1117,7 +963,7 @@ minetest.register_node("dronetest:computer", {
 	digiline = {
 		receptor = {},
 		effector = {
-			-- action = on_digiline_receive
+			action = function() end
 		},
 	},
 	mesecons = {effector = {
@@ -1141,7 +987,6 @@ minetest.register_node("dronetest:computer", {
 	end,
 	on_destruct = function(pos, oldnode)
 		deactivate(pos)
-		clearscreen(pos)
 	end,
 	on_receive_fields = function(pos, formname, fields, sender)
 		local meta = minetest.get_meta(pos)
@@ -1191,11 +1036,6 @@ minetest.register_node("dronetest:computer", {
 	end,
 	after_place_node = function(pos, placer, itemstack, pointed_thing)
 		dronetest.log("Computer placed at "..minetest.pos_to_string(pos))
-		local param2 = minetest.get_node(pos).param2
-		if param2 == 0 or param2 == 1 then
-			minetest.add_node(pos, {name = "dronetest:computer", param2 = 3})
-		end
-		prepare_writing(pos)
 	end,
 	can_dig = function(pos,player)
 		-- Diggable only if deactivated
@@ -1205,7 +1045,7 @@ minetest.register_node("dronetest:computer", {
 		return true;
 	end,
 })
-	
+--[[	
 minetest.register_entity("dronetest:display", {
 	collisionbox = { 0, 0, 0, 0, 0, 0 },
 	visual = "upright_sprite",
@@ -1234,7 +1074,7 @@ minetest.register_entity("dronetest:display", {
 		local text = history_list(self.id)
 		self.object:set_properties({textures={dronetest.generate_texture(dronetest.create_lines(text))}})
 	end
-})
+})--]]
 
 -- Some message that the mod has loaded/unloaded
 if minetest.setting_getbool("log_mods") then

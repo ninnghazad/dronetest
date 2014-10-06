@@ -60,7 +60,8 @@ if not fs.isDir("./") then fs.makeDir("./") end
 
 print("Finished booting #"..sys.id..", dropping to shell.")
 -- Clear screen
-term.clear()
+--term.clear()
+
 if fs.isFile("startup") then
 	shell.run("startup")
 end
