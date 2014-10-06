@@ -5,7 +5,7 @@ A computer-themed mod for the game minetest, heavily inspired by ComputerCraft.
 
 This is not ready for use.
 
-<img src="http://dunkelraum.net/share/screen0.jpg"/>
+<img src="http://dunkelraum.net/share/screen4.png"/>
 
 ###How to use:
 Install in mods/ as "dronetest".  
@@ -92,8 +92,12 @@ This list is constantly changing, so don't rely on it and communicate what you w
   
   
 ##Pictures:
-<img src="http://dunkelraum.net/share/screen1.jpg"/>
-<img src="http://dunkelraum.net/share/screen2.jpg"/>
+Closeup of a display:  
+<img src="http://dunkelraum.net/share/screen5.png"/>  
 
-You can't see it, but it's dancing:
-<img src="http://dunkelraum.net/share/screen3.jpg"/>
+Drone's front:  
+<img src="http://dunkelraum.net/share/screen7.png"/>  
+
+Drone's back:  
+<img src="http://dunkelraum.net/share/screen6.png"/>  
+
