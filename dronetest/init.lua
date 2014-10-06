@@ -28,7 +28,7 @@ function get_objects(pos,radius)
 	print("time: "..minetest.get_gametime())
 	
 	--local objs = mt.env:get_objects_inside_radius(pos,radius)
-	local objs = mt.env:get_objects_inside_radius(pos,radius)
+	local objs = minetest.env:get_objects_inside_radius(pos,radius)
 	print("get_objects returned: "..#objs.." objects")
 	return objs
 end
@@ -668,6 +668,10 @@ local function printTable(t,filter,invertFilter,printfunc)
 		end
 	end
 end
+<<<<<<< HEAD:init.lua
+--[[
+function test(f,t,a1,a2,a3)
+=======
 ---[[
 minetest.register_globalstep(function(dtime)
 	print("TEST -1: "..minetest.get_gametime())
@@ -676,17 +680,83 @@ minetest.register_globalstep(function(dtime)
 	
 	print("TEST 0: "..p:get_player_name().." "..type(p))
 	print("TEST A: "..minetest.get_gametime())
+>>>>>>> 2212246ccf464150a8506a2ff6d4fa07f984b65c:dronetest/init.lua
 	local function e(msg) print("TESTERROR: "..msg) end
-	local function f() 
-		print("TEST 1: "..p:get_player_name().." "..type(p))
-		p = minetest.get_player_by_name("singleplayer")
-		print("TEST 2: "..p.." "..type(p)) -- there is no :get_player_name()...
-		print("TEST B: "..minetest.get_gametime())
+	local r
+	local function ff() 
+		
+	--	print("TEST 0: f: "..dump(type(f))..": "..dump(f)..", #1 "..dump(type(a1))..": "..dump(a1)..", #2 "..dump(type(a2))..": "..dump(a2)..", #3 "..dump(type(a3))..": "..dump(a3))
+		r = f(a1,a2,a)
+	--	print("TEST 1: returns: "..type(r).." expected: "..t) --..": "..dump(r))
 	end
 	
-	local co = coroutine.create(function() xpcall(f,e) end)
+	local co = coroutine.create(function() xpcall(ff,e) end)
 	while coroutine.status(co) == "suspended" do coroutine.resume(co) end
-	error("bail")
+	if type(r) ~= t then
+		return false
+	end
+	return true
+end
+minetest.register_globalstep(function(dtime)
+	local player = minetest.get_player_by_name("singleplayer")
+	if not player then return end
+	local pos = player:getpos()
+	
+	
+	print("string.split")
+	print("### "..dump(test(string.split,"table","test test"," ")).."\n")
+	
+	print("minetest.chat_send_all")
+	print("### "..dump(test(minetest.chat_send_all,"nil","test")).."\n")
+	
+	print("minetest.get_gametime")
+	print("### "..dump(test(minetest.get_gametime,"number")).."\n")
+	
+	print("minetest.get_timeofday")
+	print("### "..dump(test(minetest.get_timeofday,"number")).."\n")
+	
+	print("minetest.get_modnames")
+	print("### "..dump(test(minetest.get_modnames,"table")).."\n")
+	
+	print("minetest.get_modpath")
+	print("### "..dump(test(minetest.get_modpath,"string","dronetest")).."\n")
+	
+	print("minetest.get_current_modname")
+	print("### "..dump(test(minetest.get_current_modname,"string")).."\n")
+	
+	print("minetest.get_worldpath")
+	print("### "..dump(test(minetest.get_worldpath,"string")).."\n")
+		
+	print("minetest.pos_to_string")
+	print("### "..dump(test(minetest.pos_to_string,"string",pos)).."\n")
+	
+	print("minetest.get_node")
+	print("### "..dump(test(minetest.get_node,"table",pos)).."\n")
+	
+	print("minetest.get_meta")
+	print("### "..dump(test(minetest.get_meta,"userdata",pos)).."\n")
+	
+	print("minetest.get_player_by_name")
+	print("### "..dump(test(minetest.get_player_by_name,"userdata","singleplayer")).."\n")
+	
+	print("minetest.get_player_ip")
+	print("### "..dump(test(minetest.get_player_ip,"string","singleplayer")).."\n")
+	
+	print("minetest.get_player_information")
+	print("### "..dump(test(minetest.get_player_information,"table","singleplayer")).."\n")
+	
+	print("minetest.get_connected_players")
+	print("### "..dump(test(minetest.get_connected_players,"table")).."\n")
+	
+	--print("minetest.find_node_near")
+	--print("### "..dump(test(minetest.find_node_near,"table",pos,10,"group:crumbly")).."\n")
+	
+	print("minetest.get_craft_recipe")
+	print("### "..dump(test(minetest.get_craft_recipe,"table","default:torch")).."\n")
+	
+	print("minetest.get_objects_inside_radius")
+	print("### "..dump(test(minetest.get_objects_inside_radius,"table",pos,10)).."\n")
+	error("done")
 	return true
 end)
 --]]
