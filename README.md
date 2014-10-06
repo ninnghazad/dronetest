@@ -101,8 +101,3 @@ Drone's front:
 Drone's back:  
 <img src="http://dunkelraum.net/share/screen6.png"/>  
 
-
-Older:
-
-You can't see it, but it's dancing:
-<img src="http://dunkelraum.net/share/screen3.png"/>
