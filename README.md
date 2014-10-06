@@ -99,7 +99,7 @@ Drone's front:
 <img src="http://dunkelraum.net/share/screen7.png"/>  
 
 Drone's back:  
-<img src="http://dunkelraum.net/share/screen7.png"/>  
+<img src="http://dunkelraum.net/share/screen6.png"/>  
 
 
 Older:
