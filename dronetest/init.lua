@@ -668,8 +668,19 @@ local function printTable(t,filter,invertFilter,printfunc)
 		end
 	end
 end
+<<<<<<< HEAD:init.lua
 --[[
 function test(f,t,a1,a2,a3)
+=======
+---[[
+minetest.register_globalstep(function(dtime)
+	print("TEST -1: "..minetest.get_gametime())
+	local p = minetest.get_player_by_name("singleplayer")
+	if not p then return end
+	
+	print("TEST 0: "..p:get_player_name().." "..type(p))
+	print("TEST A: "..minetest.get_gametime())
+>>>>>>> 2212246ccf464150a8506a2ff6d4fa07f984b65c:dronetest/init.lua
 	local function e(msg) print("TESTERROR: "..msg) end
 	local r
 	local function ff() 
@@ -750,6 +761,7 @@ minetest.register_globalstep(function(dtime)
 end)
 --]]
 
+-- TODO: rather expensive just for waking up the systems, find other way
 minetest.register_abm({
 	nodenames = {"dronetest:computer"},
 	interval = 1,

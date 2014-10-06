@@ -54,10 +54,11 @@ because of that you may have to click 'OFF' and then 'ON' after a server restart
 ##Roadmap:
 Look around the source for examples on how to get stuff done.  
 - Core:
-  - Making sure minetest.* function can be savely called through coroutines (see current problems).
+  - Making sure minetest.* function can be savely called through coroutines (see current problems): https://github.com/minetest/minetest/issues/1709
   - Drones need to spawn an invisible node when standing still, so we can interface them with other nodes, like mesecons stuff.
   - Make recipes and crafting-hooks for computer and drone nodes.
   - Make drone diggable.
+  - Make drone inventories persist restarts: https://github.com/minetest/minetest/issues/1696
   - Integrate networking in event-queue.
   - Better command-parser, with autocomplete.
   - Real GUI with charbased input in good refresh-rate.
@@ -65,7 +66,7 @@ Look around the source for examples on how to get stuff done.
   - Wrapping more important functions like load* and do*
 - APIs:
 See http://computercraft.info/wiki/Category:APIs
-The mose important ones are:
+The most important ones are:
   - sys is not really an api-file, but is created on the fly by the mod, and contains stuff like system's id and mod_name
   - io/os/fs - the should use lfs.* and _makePath to provide save, sandboxed access to files and filesystem
     - for lfs.* api check https://keplerproject.github.io/luafilesystem/manual.html#introduction
