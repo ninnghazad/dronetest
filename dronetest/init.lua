@@ -607,7 +607,7 @@ minetest.register_on_player_receive_fields(function(player, formname, fields)
 		end
 		save()
 	end
-	return true
+	return false
 end)
 
 
@@ -640,7 +640,7 @@ minetest.register_globalstep(function(dtime)
 	end
 end)
 
----[[
+--[[
 local function printTable(t,filter,invertFilter,printfunc)
 	if printfunc == nil then 
 		printfunc = function(i,v) return print(i..": "..type(v)) end 
