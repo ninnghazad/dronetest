@@ -54,7 +54,7 @@ function os.loadlib_string(string, initialenv, ...)
 	func(...)
 	for k,v in pairs(libenv) do
 		if copytypes[type[v]] then
-			libtbl[k] == v
+			libtbl[k] = v
 		end
 	end
 	return libtbl
