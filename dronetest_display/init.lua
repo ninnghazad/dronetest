@@ -54,11 +54,33 @@ end
 local reset_meta = function(pos)
 	minetest.get_meta(pos):set_string("formspec", "field[channel;Channel;${channel}]")
 end
+dronetest_display = {}
+dronetest_display.actions = {
+	get_size = { desc= "returns size in characters", func = function() return 80,33 end }
+}
 
 local on_digiline_receive = function(pos, node, channel, msg)
 	local meta = minetest.get_meta(pos)
 	local setchan = meta:get_string("channel")
 	if setchan ~= channel then return end
+	if type(msg) == "table" and type(msg.action) == "string" then
+		if msg.action == "GET_CAPABILITIES"  and type(msg.msg_id) == "string" then
+			local cap = {}
+			for n,v in pairs(dronetest_display.actions) do
+				cap[n] = v.desc
+			end
+			-- send capabilities
+			digiline:receptor_send(pos, digiline.rules.default,channel, {action = "CAPABILITIES",msg_id = msg.msg_id,msg = cap })
+		elseif dronetest_display.actions[msg.action] ~= nil then
+			-- execute function
+			local response = {dronetest_display.actions[msg.action].func(msg.argv[1],msg.argv[2],msg.argv[3],msg.argv[4],msg.argv[5])}
+			
+			-- send response
+			digiline:receptor_send(pos, digiline.rules.default,channel, {action = msg.action ,msg_id = msg.msg_id,msg = response })
+		end
+		return
+	end
+	
 	--print("display received "..dump(msg))
 	meta:set_string("text", msg)
 	clearscreen(pos)

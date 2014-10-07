@@ -371,7 +371,7 @@ events.send_all = function(event)
 	return count
 end
 
-events.receive = function(id,filter)
+events.receive = function(id,filter,channel,msg_id)
 	if active_systems[id] == nil or #active_systems[id].events == 0 then
 		return nil
 	end
@@ -379,8 +379,12 @@ events.receive = function(id,filter)
 		for i,e in pairs(active_systems[id].events) do
 			for j,f in pairs(filter) do
 				if e.type ~= nil and e.type == f then
-					table.remove(active_systems[id].events,i)
-					return e
+					if e.type == "digiline" and channel ~= nil and type(e.channel) == "string" and channel ~= e.channel 
+					and (msg_id == nil or (type(e.msg)=="table" and type(e.msg.msg_id) == "string" and e.msg.msg_id ~= msg_id)) then
+					else
+						table.remove(active_systems[id].events,i)
+						return e
+					end
 				end
 			end
 		end
@@ -403,6 +407,7 @@ if type(bootstrap) ~= "function" then minetest.log("error","bad bootstrap: "..er
 local sys = {}
 sys = {}
 sys.id = 0
+sys.last_msg_id = 0
 sys.yield = coroutine.yield
 sys.getTime = function()
 	return minetest.get_gametime()
@@ -416,6 +421,15 @@ end
 function sys:sendEvent(event)
 	return events.send_by_id(self.id,event)
 end
+function sys:receiveDigilineMessage(channel,msg_id)
+	return events.receive(self.id,{"digiline"},channel,msg_id).msg
+end
+
+function sys:getUniqueId(event)
+	self.last_msg_id = self.last_msg_id + 1
+	return minetest.get_gametime().."_"..self.id.."_"..self.last_msg_id
+end
+
 
 
 -- Gets an API as a string, used only wrapped in bootstrap.lua
@@ -963,7 +977,12 @@ minetest.register_node("dronetest:computer", {
 	digiline = {
 		receptor = {},
 		effector = {
-			action = function() end
+			action = function(pos, node, channel, msg) -- add incoming digiline-msgs to event-queue
+				local meta = minetest.get_meta(pos)
+				--local setchan = meta:get_string("channel")
+				--if setchan ~= channel then return end
+				events.send_by_id(meta:get_int("id"),{type="digiline",channel=channel,msg=msg})
+			end
 		},
 	},
 	mesecons = {effector = {
