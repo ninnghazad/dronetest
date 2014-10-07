@@ -10,7 +10,8 @@ This is not ready for use.
 ###How to use:
 Install in mods/ as "dronetest".  
 Type '/giveme dronetest:computer' to get a computer,  
-'/giveme dronetest:computer' to get a drone-spawner.  
+'/giveme dronetest:drone' to get a drone-spawner,  
+'/giveme dronetest_display:display' to get a display.  
 Place it and rightclick it.   
 A GUI opens up.   
 Type 'id' and click 'EXE', don't press enter, it closes the dialog (yeah ...).  
