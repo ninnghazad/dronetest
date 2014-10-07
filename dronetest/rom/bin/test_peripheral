@@ -1,5 +1,5 @@
 local peripheral = sys.loadApi("peripheral")
 
-local display = peripheral.wrap("dronetest:computer:3")
+local display = peripheral.wrap(sys.channel)
 local size = display.get_size()
 print("size: "..size[1].."x"..size[2])

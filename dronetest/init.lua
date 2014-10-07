@@ -307,14 +307,15 @@ local function get_drone_formspec(id)
 		"button[8,8.4;1,1;redraw;DRW]"
 	return formspec
 end
-local function get_computer_formspec(id)
+local function get_computer_formspec(id,channel)
 	local formspec =
 		"size[13,9]"..
 		default.gui_bg..
 		default.gui_bg_img..
 		default.gui_slots..
 		"textarea[0.3,0.0;13,9.7;output;;"..history_list(id).."]"..
-		"field[0.3,8.7;9,1;input;;]"..
+		"field[0.3,8.7;7,1;input;;]"..
+		"field[7.3,8.7;2,1;channel;channel;"..channel.."]"..
 		"button[9,8.4;1,1;execute;EXE]"..
 		"button[10,8.4;1,1;poweroff;OFF]"..
 		"button[11,8.4;1,1;poweron;ON]"..
@@ -325,7 +326,8 @@ end
 
 local function redraw_computer_formspec(pos,player)
 	local meta = minetest.get_meta(pos)
-	local formspec = get_computer_formspec(meta:get_int("id"))
+	
+	local formspec = get_computer_formspec(meta:get_int("id"),meta:get_string("channel"))
 	meta:set_string("formspec",formspec)
 	
 --	minetest.show_formspec(player:get_player_name(),"dronetest:computer",formspec)
@@ -513,6 +515,8 @@ local function activate_by_id(id,t,pos)
 	
 	env.sys = table.copy(sys)
 	env.sys.id = 1+id-1
+	local meta = minetest.get_meta(pos)
+	env.sys.channel = meta:get_string("channel")
 	env.sys.type = t
 	
 	-- overload print function to print to drone/computer's screen and not to servers stdout
@@ -608,7 +612,7 @@ minetest.register_on_player_receive_fields(function(player, formname, fields)
 	-- handle computer's menu in node's handler
 	elseif formname == "dronetest:computer" then -- apply config changes from menu
 		dronetest.log("skipping handler for computer")
-		return true
+		return false
 		
 	-- apply config changes from config-menu
 	elseif formname == "dronetest:menu" then 
@@ -786,7 +790,7 @@ minetest.register_abm({
 			activate(pos)
 		elseif meta:get_int("status") == 1 then	
 			print("SEND")
-			digiline:receptor_send(pos, digiline.rules.default,"dronetest:computer:"..meta:get_int("id"),history_list(meta:get_int("id")))
+			digiline:receptor_send(pos, digiline.rules.default,meta:get_string("channel"),history_list(meta:get_int("id")))
 		end
 	end,
 })
@@ -996,10 +1000,12 @@ minetest.register_node("dronetest:computer", {
 	on_construct = function(pos)
 		dronetest.last_id = dronetest.last_id + 1
 		local meta = minetest.get_meta(pos)
+		local channel = "dronetest:computer:"..dronetest.last_id
 		meta:set_int("id",dronetest.last_id )
-		meta:set_string("formspec",get_computer_formspec(dronetest.last_id))
+		meta:set_string("formspec",get_computer_formspec(dronetest.last_id,channel))
 		meta:set_string("infotext", "Computer #"..dronetest.last_id )
 		meta:set_int("status",0)
+		meta:set_string("channel",channel)
 		mkdir(mod_dir.."/"..dronetest.last_id)
 		dronetest.log("Computer #"..dronetest.last_id.." constructed at "..minetest.pos_to_string(pos))		
 		save()
@@ -1011,6 +1017,9 @@ minetest.register_node("dronetest:computer", {
 		local meta = minetest.get_meta(pos)
 		dronetest.log("on_receive_fields received '"..formname.."'")
 		local id = meta:get_int("id")
+		if fields["channel"] ~= nil then
+			meta:set_string("channel",fields.channel)
+		end
 		if fields["clear"] ~= nil then
 			console_histories[id] = {}
 			minetest.chat_send_player(sender:get_player_name(),"system #"..id..": screen cleared and redrawn.")
