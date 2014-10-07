@@ -129,10 +129,12 @@ active_systems = {}
 --Global config and function table.
 dronetest = {
 	last_id = 0,
+	last_drone_id = 0,
 	globalstep_interval = 0.01,
 	drones = {},
 	max_userspace_instructions = 1000000,
 	log = function(msg) minetest.log("action","dronetest: "..msg) end,
+
 }
 
 
@@ -289,22 +291,23 @@ local function history_list(id)
 	return s
 end
 
-local function get_drone_formspec(id)
+local function get_drone_formspec(id,channel)
 	local formspec =
-		"size[13,9]"..
+		"size[13,5]"..
 		default.gui_bg..
 		default.gui_bg_img..
 		default.gui_slots..
-		"list[detached:dronetest_drone_"..id..";main;9,5.3;4,4;]"..
-		"list[current_player;main;0,5.3;8,1;]"..
-		"list[current_player;main;0,6.3;8,3;8]"..
-		"textarea[0.3,0.0;13,5;output;;"..history_list(id).."]"..
-		"field[0.3,4.6;13,1;input;;]"..
-		"button[8,5.2;1,1;execute;EXE]"..
+		"list[detached:dronetest_drone_"..id..";main;9,1.3;4,4;]"..
+		"list[current_player;main;0,1.3;8,1;]"..
+		"list[current_player;main;0,2.3;8,3;8]"..
+		--"textarea[0.3,0.0;13,5;output;;"..history_list(id).."]"..
+		"label[0.3,0.0;DRONE_ID: "..id.."]"..
+		"field[2.3,0.3;13,1;channel;channel;"..channel.."]"
+		--[["button[8,5.2;1,1;execute;EXE]"..
 		"button[8,6.0;1,1;poweroff;OFF]"..
 		"button[8,6.8;1,1;poweron;ON]"..
 		"button_exit[8,7.6;1,1;exit;EXIT]"..
-		"button[8,8.4;1,1;redraw;DRW]"
+		"button[8,8.4;1,1;redraw;DRW]"--]]
 	return formspec
 end
 local function get_computer_formspec(id,channel)
@@ -424,7 +427,10 @@ function sys:sendEvent(event)
 	return events.send_by_id(self.id,event)
 end
 function sys:receiveDigilineMessage(channel,msg_id)
-	return events.receive(self.id,{"digiline"},channel,msg_id).msg
+	local e = events.receive(self.id,{"digiline"},channel,msg_id)
+	print("fetched digilines event for #"..dump(self.id)..": "..dump(e))
+	if e == nil then return nil end
+	return e.msg
 end
 
 function sys:getUniqueId(event)
@@ -454,7 +460,9 @@ sys.loadApi = function(name)
 		if env_save[k] == nil then env_save[k] = v end 
 	--	print("API ENV for '"..name.."': "..k..": "..type(v))
 	end
+	
 	-- Make drone/computer's env available to APIs, with id and stuff
+	--env_save.dronetest = getfenv(0).dronetest
 	env_save.sys = getfenv(2).sys
 	env_save.print = function(msg) dronetest.print(env_save.sys.id,msg) end
 	setfenv(api,env_save)
@@ -571,10 +579,11 @@ minetest.register_on_player_receive_fields(function(player, formname, fields)
 	-- Handle a drone's menu
 	if #key==3 and key[1] == "dronetest" and key[2] == "drone" then --
 		local id = tonumber(key[3])
+		
 		if (fields["quit"] == true and fields["input"] == "") or fields["exit"] ~= nil then
-			dronetest.drones[id].menu = false
+			--dronetest.drones[id].menu = false
 			return false
-		elseif fields["clear"] ~= nil then
+	--[[	elseif fields["clear"] ~= nil then
 			console_histories[id] = {}
 			minetest.chat_send_player(player:get_player_name(),"Screen cleared and redrawn.")
 		elseif fields["redraw"] ~= nil then
@@ -603,10 +612,13 @@ minetest.register_on_player_receive_fields(function(player, formname, fields)
 			else
 				minetest.chat_send_player(player:get_player_name(),"Cannot exec, activate system first.")
 			end
+			--]]
+		elseif fields["channel"] ~= nil then
+			dronetest.drones[id].channel = fields.channel
 		end
-		if dronetest.drones[id].menu ~= nil and dronetest.drones[id].menu == true then
-			minetest.show_formspec(player:get_player_name(), "dronetest:drone:"..id, get_drone_formspec(id))
-		end
+		--if dronetest.drones[id].menu ~= nil and dronetest.drones[id].menu == true then
+		--	minetest.show_formspec(player:get_player_name(), "dronetest:drone:"..id, get_drone_formspec(id,dronetest.drones[id].channel))
+		--end
 		return true
 		
 	-- handle computer's menu in node's handler
@@ -810,6 +822,7 @@ local drone = {
 	textures = {"computerTop.png", "computerTop.png", "computerSide.png", "computerSide.png",  "turtle.png", "computerSide.png",},
 	automatic_rotate = false,
         driver = nil,
+	channel = "dronetest:drone:"..0,
 	menu = false,
 	id = 0,
 	status = 0,
@@ -820,9 +833,39 @@ function drone.on_rightclick(self, clicker)
         if not clicker or not clicker:is_player() then
                 return
         end
-	self.menu = true
-	minetest.show_formspec(clicker:get_player_name(), "dronetest:drone:"..self.id, get_drone_formspec(self.id))
+	--self.menu = true
+	minetest.show_formspec(clicker:get_player_name(), "dronetest:drone:"..self.id, get_drone_formspec(self.id,self.channel))
 end
+dronetest.drone_actions = {
+	test = {desc="a test",func=function() print("TEST") end},
+	turnLeft = {desc="Rotates the turtle to the left.",func=function() print("TURNLEFT") end}
+}
+function drone.on_digiline_receive_line(self, channel, msg)
+	print("DRONE "..self.id.." received digiline on "..channel..": "..dump(msg))
+	if channel ~= self.channel then return end
+	
+	if type(msg) == "table" and type(msg.action) == "string" then
+		local pos = self.object:getpos()
+		if msg.action == "GET_CAPABILITIES"  and type(msg.msg_id) == "string" then
+			local cap = {}
+			for n,v in pairs(dronetest.drone_actions) do
+				cap[n] = v.desc
+			end
+			print("drone responds to GET_CAPABILITIES")
+			-- send capabilities
+			digiline:receptor_send(pos, digiline.rules.default,channel, {action = "CAPABILITIES",msg_id = msg.msg_id,msg = cap })
+			return
+		elseif dronetest.drone_actions[msg.action] ~= nil then
+			-- execute function
+			local response = {dronetest.drone_actions[msg.action].func(msg.argv[1],msg.argv[2],msg.argv[3],msg.argv[4],msg.argv[5])}
+			
+			-- send response
+			digiline:receptor_send(pos, digiline.rules.default,channel, {action = msg.action ,msg_id = msg.msg_id,msg = response })
+			return
+		end
+	end
+end
+
 local rad2unit = 1 / (2*3.14159265359)
 function drone.on_activate(self, staticdata, dtime_s)
         self.object:set_armor_groups({immortal=1})
@@ -833,6 +876,7 @@ function drone.on_activate(self, staticdata, dtime_s)
 		if type(data) == "table" then
 			self.id = data.id
 			self.status = data.status
+			self.channel = data.channel
 			self.yaw = data.yaw
 			self.inv = data.inv
 			print("re-activate drone "..self.id.." ..")
@@ -846,14 +890,16 @@ function drone.on_activate(self, staticdata, dtime_s)
 		else
 			self.yaw = 0
 			self.id = -1
+			self.channel = "dronetest_error"
 			self.status = -1
 			error("corrupted drone!")
 		end
 	else
-		dronetest.last_id = dronetest.last_id + 1
-		self.id = dronetest.last_id
+		dronetest.last_drone_id = dronetest.last_drone_id + 1
+		self.id = dronetest.last_drone_id
 		self.status = 0
 		self.yaw = 0
+		self.channel = "dronetest:drone:"..self.id
 		print("activate drone "..self.id.." ..")
 		
 	--	minetest.add_node(pos,"dronetest:drone_virtual")
@@ -876,16 +922,16 @@ function drone.on_activate(self, staticdata, dtime_s)
 	
 	-- align position with grid
 	
-	pos.x = math.floor(pos.x)
-	pos.y = math.floor(pos.y)
-	pos.z = math.floor(pos.z)
+	pos.x = math.round(pos.x)
+	pos.y = math.round(pos.y)
+	pos.z = math.round(pos.z)
 	self.object:setpos(pos)
 	self.object:setyaw(self.yaw)
 	print("Add drone "..self.id.." to list.")
 	
 	
 	-- TODO: we need to somehow remove these when drones get removed, but there is no on_deactivate handler yet i think
-	table.insert(dronetest.drones,self.id,self)
+	--table.insert(dronetest.drones,self.id,self)
 	save()
 end
 
@@ -893,16 +939,8 @@ function drone.get_staticdata(self)
 	local data = {}
 	data.id = self.id
 	data.status = self.status
+	data.channel = self.channel
 	data.yaw = self.object:getyaw()
-	-- TODO: save inventory data for drones?!
---[[
-	local inv = minetest.get_inventory({type="detached",name="dronetest_drone_"..self.id})
-	if inv ~= nil then
-		data.inv = inv:get_lists()
-		
-	end
-	print("SAVESAVESAVE "..inv:serialize())
---]]
         return minetest.serialize(data)
 end
 
@@ -910,9 +948,6 @@ function drone.on_punch(self, puncher, time_from_last_punch, tool_capabilities, 
         if not puncher or not puncher:is_player() or self.removed then
                 return
         end
---	local tmp = table.copy(drone)
---	tmp.textures = {"computerTop.png", "computerTop.png", "computerSide.png", "computerSide.png", dronetest.generate_texture(dronetest.create_lines(testScreen.."\n"..minetest.get_gametime())), "turtle.png"}
---	self.object:set_properties(tmp)
 end
 --[[
 function drone.on_step(self, dtime)
@@ -938,7 +973,10 @@ minetest.register_node("dronetest:drone", {
 	sounds = default.node_sound_wood_defaults(),
 	after_place_node = function(pos, placer, itemstack, pointed_thing)
 		dronetest.log("Drone spawner placed at "..minetest.pos_to_string(pos))
-		minetest.add_entity(pos,"dronetest:drone")
+		local d = minetest.add_entity(pos,"dronetest:drone")
+		d = d:get_luaentity()
+		table.insert(dronetest.drones,d.id,d)
+		--print("SPAWNED DRONE "..dronetest.last_drone_id.." "..dump())
 		minetest.remove_node(pos)
 	end,
 	can_dig = function(pos,player)
@@ -946,21 +984,6 @@ minetest.register_node("dronetest:drone", {
 	end,
 })
 
-minetest.register_node("dronetest:drone_virtual", {
-	description = "This is the virtual part of a drone, this is not meant for players.",
-	tiles = {""},
-	paramtype2 = "facedir",
-	groups = {choppy=2,oddly_breakable_by_hand=2},
-	legacy_facedir_simple = true,
-	is_ground_content = false,
-	sounds = default.node_sound_wood_defaults(),
-	after_place_node = function(pos, placer, itemstack, pointed_thing)
-		dronetest.log("Drone-virtual placed at "..minetest.pos_to_string(pos))
-	end,
-	can_dig = function(pos,player)
-		return false
-	end,
-})
 
 
 minetest.register_node("dronetest:computer", {
@@ -1012,6 +1035,9 @@ minetest.register_node("dronetest:computer", {
 	end,
 	on_destruct = function(pos, oldnode)
 		deactivate(pos)
+	end,
+	on_event_receive = function(event)
+		
 	end,
 	on_receive_fields = function(pos, formname, fields, sender)
 		local meta = minetest.get_meta(pos)
