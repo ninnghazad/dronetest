@@ -55,11 +55,13 @@ because of that you may have to click 'OFF' and then 'ON' after a server restart
 Look around the source for examples on how to get stuff done.  
 - Core:
   - Making sure minetest.* function can be savely called through coroutines (see current problems): https://github.com/minetest/minetest/issues/1709
-  - Drones need to spawn an invisible node when standing still, so we can interface them with other nodes, like mesecons stuff.
+  ~~- Drones need to spawn an invisible node when standing still, so we can interface them with other nodes, like mesecons stuff.~~
+  - Peripheral API
+  - Turn drones into peripherals and still have something like the drone.* api
   - Make recipes and crafting-hooks for computer and drone nodes.
   - Make drone diggable.
   - Make drone inventories persist restarts: https://github.com/minetest/minetest/issues/1696
-  - Integrate networking in event-queue.
+  - Integrate (wireless)networking in event-queue (just where digilines is not enough)
   - Better command-parser, with autocomplete.
   - Real GUI with charbased input in good refresh-rate.
   - Better shell, based on a better GUI. with color, and settable cursor-position, redraws...
@@ -72,6 +74,7 @@ The most important ones are:
     - for lfs.* api check https://keplerproject.github.io/luafilesystem/manual.html#introduction
     - _makePath is supposed to catch all illegal paths, and must be used whenever a path is used with lfs or some input/output
   - testnet - a rednet-like api, will have to be mostly done in core
+    mostly replaced with digilines
   - parallel/coroutine - this will be tricky to get sandboxed right, need to make sure no privilege escalation is possible
   - drone - this contains the drone-specific functions like movement, inventory access.
   - math/vector/string/bit... 
@@ -81,8 +84,8 @@ The most important ones are:
   - Other commands one expects from a OS like beep,reboot,shutdown,time...
   - Cool stuff
 - Misc:
-  - A model with "wield-points" for tools and peripherals.
-  - Textures
+  - A drone-model with "wield-points" for tools and peripherals.
+  ~~- Textures~~
   - Sounds (like, beeep)
   - Some good examples
   - Some good tutorials
