@@ -837,9 +837,50 @@ function drone.on_rightclick(self, clicker)
 	--self.menu = true
 	minetest.show_formspec(clicker:get_player_name(), "dronetest:drone:"..self.id, get_drone_formspec(self.id,self.channel))
 end
+
+
+
+local steps = 10
+local rad2unit = 1 / (2*3.14159265359)
+local function yaw2dir(yaw)
+	local dir = yaw * rad2unit
+	print("yaw2dir: "..yaw.." > "..dir)
+	if dir > 0.875 or dir <= 0.125 then return 0 
+	elseif dir > 0.125 and dir <= 0.375 then return 1 
+	elseif dir > 0.375 and dir <= 0.625 then return 2
+	else return 3 end
+end
+local function snapRotation(r)
+	while r < 0 do r = r + (1/rad2unit) end
+	while r > 1/rad2unit do r = r - (1/rad2unit) end
+	print("snap 0: "..r)
+	r = r * rad2unit
+	print("snap 1: "..r)
+	r = math.round(r * 4) / 4
+	--print("snap 1: "..r)
+	--if r > 3 then r = 0 end
+	print("snap 2: "..r)
+	r = r / rad2unit
+	print("snap 3: "..r)
+	return r
+end
+
+-- the drone's actions are different in that they all take the calling system's id as first parameter, so they know where to print stuff.
 dronetest.drone_actions = {
 	test = {desc="a test",func=function(id) print("TEST") end},
-	turnLeft = {desc="Rotates the turtle to the left.",func=function(id) dronetest.print(id,"TURNLEFT") end}
+	turnLeft = {desc="Rotates the turtle to the left.",
+		func=function(id)
+			local d = dronetest.drones[id]
+			local r = d.object:getyaw() 
+			local rot = (0.25 / rad2unit) / steps
+			r = snapRotation(r)
+			for i=1,steps,1 do
+				r = r + rot
+			
+				d.object:setyaw(r)
+				coroutine.yield()
+			end
+		end},
 }
 
 -- drones receive digiline messages only through transceivers, when responding to those messages,
@@ -862,7 +903,7 @@ function drone.on_digiline_receive_line(self, channel, msg, senderPos)
 			digiline:receptor_send(senderPos, digiline.rules.default,channel, {action = "CAPABILITIES",msg_id = msg.msg_id,msg = cap })
 			return
 		elseif dronetest.drone_actions[msg.action] ~= nil then
-			
+			if msg.argv == nil or type(msg.argv) ~= "table" then msg.argv = {} end
 			-- execute function
 			local response = {dronetest.drone_actions[msg.action].func(self.id,msg.argv[1],msg.argv[2],msg.argv[3],msg.argv[4],msg.argv[5])}
 			-- act as if transceiver would send the message
