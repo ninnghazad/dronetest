@@ -1,11 +1,5 @@
 -- BOOTSTRAP
-
---[[
-for i,v in pairs(getfenv(1)) do
-	print(i..": "..type(v))
-end
---]]
-
+-- this is the entrypoint to userspace
 
 function processInput(msg)
 	if msg == nil or type(msg) ~= "string" then return false end
