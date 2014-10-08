@@ -13,13 +13,13 @@ dronetest_transceiver.actions = {
 local on_digiline_receive = function(pos, node, channel, msg)
 	local meta = minetest.get_meta(pos)
 	local setchan = meta:get_string("channel")
-	print("transceiver received data on channel "..channel.." (own: "..setchan..")")
+--	print("transceiver received data on channel "..channel.." (own: "..setchan..")")
 	-- not our channel - forward data to all drones?!
 	-- may be slow with lots of drones an traffic...
 	if setchan ~= channel and type(msg) == "table" and type(msg.action) == "string" then --only forward our messages,not any data
 --		print("TRANSCEIVER GOT DATA: "..dump(dronetest.drones))
 		for id,drone in pairs(dronetest.drones) do
-			print("transceiver is forwarding data to drone #"..id)
+			--print("transceiver is forwarding data to drone #"..drone.id)
 			drone:on_digiline_receive_line(channel,msg,pos)
 		end
 		return 

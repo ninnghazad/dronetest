@@ -159,7 +159,7 @@ local LCD_WITH = 640
 local LCD_PADDING = 80
 
 local LINE_LENGTH = 80
-local NUMBER_OF_LINES = 33
+local NUMBER_OF_LINES = 40
 
 local LINE_HEIGHT = 12
 local CHAR_WIDTH = 5
@@ -207,12 +207,15 @@ function dronetest.create_lines(text)
 		end
 		
 	end
-	for _,word in ipairs(lines) do
-			line = word
-			table.insert(tab, line)
-			line_num = line_num+1
-			if line_num > NUMBER_OF_LINES then
-				return tab
+	for i,word in ipairs(lines) do
+			-- use last n lines of buffer
+			if i >= #lines - NUMBER_OF_LINES then 
+				line = word
+				table.insert(tab, line)
+				--line_num = line_num+1
+				--if line_num > NUMBER_OF_LINES then
+				--	return tab
+				--end
 			end
 		--end
 	end

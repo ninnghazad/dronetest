@@ -21,71 +21,6 @@ package.cpath = package.cpath
 
 lfs = require("lfs")
 
---debug
-mt = minetest
-function get_objects(pos,radius)
---	print("get_objects: "..dump(pos).." "..radius)
-	print("time: "..minetest.get_gametime())
-	
-	--local objs = mt.env:get_objects_inside_radius(pos,radius)
-	local objs = minetest.env:get_objects_inside_radius(pos,radius)
-	print("get_objects returned: "..#objs.." objects")
-	return objs
-end
-
-setfenv(get_objects,getfenv(0))
---enddebug
-
---[[
-local maxInst = 1000000
-local function yield() print("yield") coroutine.yield() end
-local function t() while true do end end
-setfenv(t,getfenv(1))
-
-
-for i = 1, 10, 1 do
-print("cross-yield-hook test 1: coroutine yield per hook")
-local co = coroutine.create(t)
-while true do
-	local status = coroutine.status(co)
-	print("status "..status)
-	if status == "suspended" then
-		print("resume "..status)
-		debug.sethook(co,yield,"",maxInst)
-		coroutine.resume(co)
-		debug.sethook(co)
-	elseif status == "dead" then
-		print("dead "..status)
-		co = nil
-		break
-	end
-end
-end
-print("ok")
-
-for i = 1, 100, 1 do
-print("cross-yield-hook test 2: coroutine yield per hook, through pcall")
-local co = coroutine.create(function() pcall(t) end)
-while true do
-	local status = coroutine.status(co)
-	print("status "..status)
-	if status == "suspended" then
-		print("resume "..status)
-		debug.sethook(co,yield,"",maxInst)
-		coroutine.resume(co)
-		debug.sethook(co)
-	elseif status == "dead" then
-		print("dead "..status)
-		co = nil
-		break
-	end
-end
-end
-print("ok")
---jit.on()
---]]
-
-
 
 
 function is_filename(filename)
@@ -274,21 +209,25 @@ minetest.register_chatcommand("dronetest", {
 })
 
 
-
+-- this is ugly and badly named
+-- this is what formats text when sent to stdout
 local function history_list(id)
 	if console_histories[id] == nil then
 		-- TODO: put some nifty ascii-art as default screen?!?
 		return "###### P R E S S   O N   T O   S T A R T   S Y S T E M #####\n"
 	end
+	return console_histories[id] -- send complete buffer to display for now
+	--[[
 	local s = ""
-	for i,v in pairs(console_histories[id]) do
-		if i >= math.max(0,#console_histories[id] - 22) then
-			
-			s = s..""..v.."\n"
+	local n = count(console_histories[id])
+	for i,v in ipairs(console_histories[id]) do
+		if i > math.max(0,n - (40-6)) then -- hardcoded size of display
+			s = s..""..v.." "..n.."\n"
 		end
 	end
 	s = s.." "
 	return s
+	--]]
 end
 
 local function get_drone_formspec(id,channel)
@@ -341,13 +280,18 @@ function dronetest.print(id,msg)
 		return
 	end
 	if console_histories[id] == nil then
-		console_histories[id] = {}
+		console_histories[id] = ""
 	end
-	table.insert(console_histories[id],minetest.formspec_escape(msg))
+	console_histories[id] = console_histories[id]..msg.."\n"
 	
---	if active_systems[id] ~= nil then
---		digiline:receptor_send(active_systems[id].pos, digiline.rules.default,"dronetest:computer:"..id, console_histories[id])
---	end
+	if active_systems[id] ~= nil then
+		-- TODO: limit updates per second
+		local channel = minetest.get_meta(active_systems[id].pos):get_string("channel")
+		--print("send print to "..channel)
+		digiline:receptor_send(active_systems[id].pos, digiline.rules.default, channel, history_list(id))
+		--digiline:receptor_send(active_systems[id].pos, digiline.rules.default,"dronetest:computer:"..id, console_histories[id])
+	end
+	
 	dronetest.log("system "..id.." generated output: "..msg)
 end
 
@@ -400,6 +344,12 @@ events.receive = function(id,filter,channel,msg_id)
 	return event
 end
 
+function sleep(seconds)
+	local start = minetest.get_gametime()
+	while minetest.get_gametime() - start < seconds do
+		coroutine.yield()
+	end
+end
 
 -- Load bootstrap code once
 local bootstrap = readFile(mod_dir.."/bootstrap.lua")
@@ -426,8 +376,8 @@ function sys:sendEvent(event)
 end
 function sys:receiveDigilineMessage(channel,msg_id)
 	local e = events.receive(self.id,{"digiline"},channel,msg_id)
-	print("fetched digilines event for #"..dump(self.id)..": "..dump(e))
 	if e == nil then return nil end
+	print("COMPUTER #"..dump(self.id).." received digilines event on channel: "..channel.." "..dump(e))
 	return e.msg
 end
 
@@ -468,6 +418,7 @@ sys.loadApi = function(name)
 end
 
 -- Userspace Environment, this is available from inside systems
+-- TODO: do we need to copy all the tables so they wont be changed for everybody by one user?
 userspace_environment = {ipairs=ipairs,pairs=pairs,print=print}
 userspace_environment.mod_name = mod_name
 userspace_environment.mod_dir = mod_dir
@@ -484,6 +435,20 @@ userspace_environment.setfenv = setfenv
 --userspace_environment.loadfile = loadfile
 userspace_environment.pcall = pcall
 userspace_environment.xpcall = xpcall
+
+-- coroutines not yet working from userspace
+-- the jit.off() trick does not work as it does with the main coroutine, and i don't know why
+---[[
+-- i'm not sure it is safe yet
+userspace_environment.coroutine = table.copy(coroutine)
+
+-- this i need because otherwise yielding will fail. has to do with luajit's coco
+userspace_environment.coroutine.create = function(f)
+--	jit.off(true)
+	jit.off(f,true)
+	return coroutine.create(f)
+end
+--]]
 
 userspace_environment.loadfile = function(s)
 	local f,err = loadfile(s)
@@ -574,58 +539,21 @@ end
 
 minetest.register_on_player_receive_fields(function(player, formname, fields)
 	dronetest.log("minetest.register_on_player_receive_fields received '"..formname.."'")
-	
 	local key = {formname:match("([^:]+):([^:]+):([^:]+)")}
 		
 	-- Handle a drone's menu
 	if #key==3 and key[1] == "dronetest" and key[2] == "drone" then --
 		local id = tonumber(key[3])
-		
 		if (fields["quit"] == true and fields["input"] == "") or fields["exit"] ~= nil then
-			--dronetest.drones[id].menu = false
 			return false
-	--[[	elseif fields["clear"] ~= nil then
-			console_histories[id] = {}
-			minetest.chat_send_player(player:get_player_name(),"Screen cleared and redrawn.")
-		elseif fields["redraw"] ~= nil then
-			--console_histories[id] = {}
-			minetest.chat_send_player(player:get_player_name(),"Screen redrawn.")
-		elseif fields["poweron"] ~= nil then
-			if dronetest.drones[id].status ~= 1 then
-				activate_by_id(id)
-				dronetest.drones[id].status = 1
-			end
-			minetest.chat_send_player(player:get_player_name(),"system #"..id.." activated, now "..count(active_systems).." systems online.")
-		elseif fields["poweroff"] ~= nil then
-			if dronetest.drones[id].status ~= 0 then
-				deactivate_by_id(id)
-				dronetest.drones[id].status = 0
-			end
-			minetest.chat_send_player(player:get_player_name(),"system #"..id.." deactivated, now "..count(active_systems).." systems online.")
-		elseif fields["input"] ~= nil and fields["input"] ~= "" then
-			dronetest.log("command: "..fields["input"])
-			local id = id
-			if active_systems[id] ~= nil then
-				if not events.send_by_id(id,{type="input",msg=fields["input"]}) then
-					minetest.log("error","could not queue event")
-				end
-				dronetest.log("system "..id.." now has "..#active_systems[id].events.." events.")
-			else
-				minetest.chat_send_player(player:get_player_name(),"Cannot exec, activate system first.")
-			end
-			--]]
 		elseif fields["channel"] ~= nil then
 			dronetest.drones[id].channel = fields.channel
 		end
-		--if dronetest.drones[id].menu ~= nil and dronetest.drones[id].menu == true then
-		--	minetest.show_formspec(player:get_player_name(), "dronetest:drone:"..id, get_drone_formspec(id,dronetest.drones[id].channel))
-		--end
 		return true
-		
 	-- handle computer's menu in node's handler
 	elseif formname == "dronetest:computer" then -- apply config changes from menu
 		dronetest.log("skipping handler for computer")
-		return false
+		return false -- return false to allow next handler to take this
 		
 	-- apply config changes from config-menu
 	elseif formname == "dronetest:menu" then 
@@ -682,130 +610,28 @@ minetest.register_globalstep(function(dtime)
 	end
 end)
 
---[[
-local function printTable(t,filter,invertFilter,printfunc)
-	if printfunc == nil then 
-		printfunc = function(i,v) return print(i..": "..type(v)) end 
-	end
-	if invertFilter == nil then 
-		invertFilter = false
-	end
-	local i
-	local v
-	print("printTable: ")
-	for i,v in pairs(t) do
-		local found = false
-		if filter == nil or (type(filter) == "string" and type(v) == filter) then
-			found = true
-		elseif type(filter) == "table" then
-			for _,f in ipairs(filter) do
-				if type(v) == f then
-					found = true
-					break
-				end
-			end
-		end
-		if found ~= invertFilter then
-			printfunc(i,v)
-		end
-	end
-end
-
-function test(f,t,a1,a2,a3)
-
-	local function e(msg) print("TESTERROR: "..msg) end
-	local r
-	local function ff() 
-		
-	--	print("TEST 0: f: "..dump(type(f))..": "..dump(f)..", #1 "..dump(type(a1))..": "..dump(a1)..", #2 "..dump(type(a2))..": "..dump(a2)..", #3 "..dump(type(a3))..": "..dump(a3))
-		r = f(a1,a2,a)
-	--	print("TEST 1: returns: "..type(r).." expected: "..t) --..": "..dump(r))
-	end
-	
-	local co = coroutine.create(function() xpcall(ff,e) end)
-	while coroutine.status(co) == "suspended" do coroutine.resume(co) end
-	if type(r) ~= t then
-		return false
-	end
-	return true
-end
-minetest.register_globalstep(function(dtime)
-	local player = minetest.get_player_by_name("singleplayer")
-	if not player then return end
-	local pos = player:getpos()
-	
-	
-	print("string.split")
-	print("### "..dump(test(string.split,"table","test test"," ")).."\n")
-	
-	print("minetest.chat_send_all")
-	print("### "..dump(test(minetest.chat_send_all,"nil","test")).."\n")
-	
-	print("minetest.get_gametime")
-	print("### "..dump(test(minetest.get_gametime,"number")).."\n")
-	
-	print("minetest.get_timeofday")
-	print("### "..dump(test(minetest.get_timeofday,"number")).."\n")
-	
-	print("minetest.get_modnames")
-	print("### "..dump(test(minetest.get_modnames,"table")).."\n")
-	
-	print("minetest.get_modpath")
-	print("### "..dump(test(minetest.get_modpath,"string","dronetest")).."\n")
-	
-	print("minetest.get_current_modname")
-	print("### "..dump(test(minetest.get_current_modname,"string")).."\n")
-	
-	print("minetest.get_worldpath")
-	print("### "..dump(test(minetest.get_worldpath,"string")).."\n")
-		
-	print("minetest.pos_to_string")
-	print("### "..dump(test(minetest.pos_to_string,"string",pos)).."\n")
-	
-	print("minetest.get_node")
-	print("### "..dump(test(minetest.get_node,"table",pos)).."\n")
-	
-	print("minetest.get_meta")
-	print("### "..dump(test(minetest.get_meta,"userdata",pos)).."\n")
-	
-	print("minetest.get_player_by_name")
-	print("### "..dump(test(minetest.get_player_by_name,"userdata","singleplayer")).."\n")
-	
-	print("minetest.get_player_ip")
-	print("### "..dump(test(minetest.get_player_ip,"string","singleplayer")).."\n")
-	
-	print("minetest.get_player_information")
-	print("### "..dump(test(minetest.get_player_information,"table","singleplayer")).."\n")
-	
-	print("minetest.get_connected_players")
-	print("### "..dump(test(minetest.get_connected_players,"table")).."\n")
-	
-	--print("minetest.find_node_near")
-	--print("### "..dump(test(minetest.find_node_near,"table",pos,10,"group:crumbly")).."\n")
-	
-	print("minetest.get_craft_recipe")
-	print("### "..dump(test(minetest.get_craft_recipe,"table","default:torch")).."\n")
-	
-	print("minetest.get_objects_inside_radius")
-	print("### "..dump(test(minetest.get_objects_inside_radius,"table",pos,10)).."\n")
-	error("done")
-	return true
-end)
---]]
-
--- TODO: rather expensive just for waking up the systems, find other way
 minetest.register_abm({
 	nodenames = {"dronetest:computer"},
 	interval = 1,
 	chance = 1,
 	action = function(pos)
+		for id,drone in pairs(dronetest.drones) do
+			print("active drone: "..id.." "..dump(drone))
+		end
+		-- this is now in dronetest.print, where it should be
+		--[[
 		local meta = minetest.get_meta(pos)
-		-- make sure nodes that where active are reactivated on server start and after crashes
-		if meta:get_int("status") == 1 and active_systems[meta:get_int("id")] == nil then
-			activate(pos)
-		elseif meta:get_int("status") == 1 then	
+		if meta:get_int("status") == 1 then	
 			print("SEND")
 			digiline:receptor_send(pos, digiline.rules.default,meta:get_string("channel"),history_list(meta:get_int("id")))
+		end
+		--]]
+		-- Activate systems that were active when the game was closed last time.
+		-- or that may have crashed strangely
+		local meta = minetest.get_meta(pos)
+		if meta:get_int("status") == 1 and active_systems[meta:get_int("id")] == nil then
+			console_histories[meta:get_int("id")] = ""
+			activate(pos)
 		end
 	end,
 })
@@ -852,6 +678,7 @@ local function yaw2dir(yaw)
 	elseif dir > 0.375 and dir <= 0.625 then return 2
 	else return 3 end
 end
+
 local function snapRotation(r)
 	while r < 0 do r = r + (1/rad2unit) end
 	while r > 1/rad2unit do r = r - (1/rad2unit) end
@@ -866,6 +693,7 @@ local function snapRotation(r)
 	print("snap 3: "..r)
 	return r
 end
+
 local function checkTarget(pos)
 	local node = minetest.get_node(pos)
 	if node ~= nil and node.name ~= "air" then
@@ -889,6 +717,7 @@ local function checkTarget(pos)
 	return true
 	--]]
 end
+
 -- the drone's actions are different in that they all take the drone's id as first parameter, and a print-callback as the second.
 dronetest.drone_actions = {
 	test = {desc="a test",func=function(id,print) print("TEST") end},
@@ -953,9 +782,11 @@ dronetest.drone_actions = {
 }
 
 -- drones receive digiline messages only through transceivers, when responding to those messages,
--- they act as if the transceiver would respond
+-- they act as if the transceiver would respond, meaning transceivers are actually just transmitters,
+-- but act like transceivers to the player.
 function drone.on_digiline_receive_line(self, channel, msg, senderPos)
-	print("DRONE "..self.id.." received digiline channel: "..channel.." type: "..type(msg))
+	if type(msg) ~= "table" or type(msg.action) ~= "string" then return end
+	print("DRONE "..self.id.." received digiline channel: "..channel.." action: "..msg.action)
 	if channel ~= self.channel then return end
 	
 	if type(msg) == "table" and type(msg.action) == "string" then
@@ -965,19 +796,23 @@ function drone.on_digiline_receive_line(self, channel, msg, senderPos)
 			for n,v in pairs(dronetest.drone_actions) do
 				cap[n] = v.desc
 			end
-			print("drone responds to GET_CAPABILITIES")
+			print("DRONE "..self.id.." responds channel: "..channel.." action: "..msg.action)
 			-- act as if transceiver would send the message
 			
-			-- send capabilities
+			-- send capabilities -- act as if transceiver would send the message
 			digiline:receptor_send(senderPos, digiline.rules.default,channel, {action = "CAPABILITIES",msg_id = msg.msg_id,msg = cap })
 			return
 		elseif dronetest.drone_actions[msg.action] ~= nil then
 			if msg.argv == nil or type(msg.argv) ~= "table" then msg.argv = {} end
+			print("drone #"..self.id.." will execute "..msg.action.." from "..channel..".")
+		--	print("PRE: "..dump(dronetest.drones[self.id]).." "..type(self.id))
 			-- execute function
 			local response = {dronetest.drone_actions[msg.action].func(self.id,msg.print,msg.argv[1],msg.argv[2],msg.argv[3],msg.argv[4],msg.argv[5])}
-			-- act as if transceiver would send the message
 			
-			-- send response
+			print("drone #"..self.id.." finished action '"..msg.action.."': "..dump(response))
+			print("drone #"..self.id.." will answer on "..channel..".")
+			
+			-- send response -- act as if transceiver would send the message
 			digiline:receptor_send(senderPos, digiline.rules.default,channel, {action = msg.action ,msg_id = msg.msg_id,msg = response })
 			return
 		end
@@ -1005,7 +840,9 @@ function drone.on_activate(self, staticdata, dtime_s)
 			if r > 3 then r = 0 end
 			r = r / rad2unit
 			self.object:setyaw(r)
-			table.insert(dronetest.drones,self.id,self)
+			
+			print("add drone "..self.id.." to list. "..type(self.id))
+			dronetest.drones[self.id] = self.object:get_luaentity()
 		else
 			self.yaw = 0
 			self.id = -1
@@ -1046,7 +883,7 @@ function drone.on_activate(self, staticdata, dtime_s)
 	pos.z = math.round(pos.z)
 	self.object:setpos(pos)
 	self.object:setyaw(self.yaw)
-	print("Add drone "..self.id.." to list.")
+	--print("Add drone "..self.id.." to list.")
 	
 	
 	-- TODO: we need to somehow remove these when drones get removed, but there is no on_deactivate handler yet i think
@@ -1077,8 +914,8 @@ function drone.on_step(self, dtime)
 
 end
 --]]
+
 minetest.register_entity("dronetest:drone", drone)
---minetest.registered_entities["dronetest:drone"].
 
 -- Helper-node which does nothing but spawn a drone entity, 
 -- this is what the player crafts in order to get a drone.
@@ -1094,7 +931,8 @@ minetest.register_node("dronetest:drone", {
 		dronetest.log("Drone spawner placed at "..minetest.pos_to_string(pos))
 		local d = minetest.add_entity(pos,"dronetest:drone")
 		d = d:get_luaentity()
-		table.insert(dronetest.drones,d.id,d)
+		print("add drone "..self.id.." to list.")
+		dronetest.drones[d.id]=d
 		--print("SPAWNED DRONE "..dronetest.last_drone_id.." "..dump())
 		minetest.remove_node(pos)
 	end,
@@ -1127,7 +965,9 @@ minetest.register_node("dronetest:computer", {
 				local meta = minetest.get_meta(pos)
 				--local setchan = meta:get_string("channel")
 				--if setchan ~= channel then return end
-				events.send_by_id(meta:get_int("id"),{type="digiline",channel=channel,msg=msg})
+				local id = meta:get_int("id")
+				print("COMPUTER "..id.." received on "..channel.." "..dump(msg))
+				events.send_by_id(id,{type="digiline",channel=channel,msg=msg})
 			end
 		},
 	},
@@ -1166,7 +1006,7 @@ minetest.register_node("dronetest:computer", {
 			meta:set_string("channel",fields.channel)
 		end
 		if fields["clear"] ~= nil then
-			console_histories[id] = {}
+			console_histories[id] = ""
 			minetest.chat_send_player(sender:get_player_name(),"system #"..id..": screen cleared and redrawn.")
 		elseif fields["redraw"] ~= nil then
 			minetest.chat_send_player(sender:get_player_name(),"system #"..id..": screen redrawn.")
@@ -1209,6 +1049,7 @@ minetest.register_node("dronetest:computer", {
 	end,
 	after_place_node = function(pos, placer, itemstack, pointed_thing)
 		dronetest.log("Computer placed at "..minetest.pos_to_string(pos))
+		
 	end,
 	can_dig = function(pos,player)
 		-- Diggable only if deactivated
@@ -1218,36 +1059,6 @@ minetest.register_node("dronetest:computer", {
 		return true;
 	end,
 })
---[[	
-minetest.register_entity("dronetest:display", {
-	collisionbox = { 0, 0, 0, 0, 0, 0 },
-	visual = "upright_sprite",
-	textures = {},
-	id = -2,
-	on_activate = function(self, staticdata, dtime_s)
-		if type(staticdata) == "string" and #staticdata > 0 then
-			local data = minetest.deserialize(staticdata)
-			self.id = data.id
-		else 
-			self.id = dronetest.last_id
-		end
-		print("on_activate: "..self.id)
-		local text = history_list(id)
-		self.object:set_properties({textures={dronetest.generate_texture(dronetest.create_lines(text))}})
-	end,
-	get_staticdata= function(self)
-		local data = {}
-		data.id = self.id
-		return minetest.serialize(data)
-	end,
-
-	on_step = function(self, dtime)
-		
-		if active_systems[self.id] == nil then return false end
-		local text = history_list(self.id)
-		self.object:set_properties({textures={dronetest.generate_texture(dronetest.create_lines(text))}})
-	end
-})--]]
 
 -- Some message that the mod has loaded/unloaded
 if minetest.setting_getbool("log_mods") then

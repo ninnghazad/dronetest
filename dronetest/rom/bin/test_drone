@@ -1,16 +1,51 @@
+-- jit.off(true) -- no effect?
 local peripheral = sys.loadApi("peripheral")
 
-local drone = peripheral.wrap("dronetest:drone:1")
-print("WRAPPED")
-local r = drone.turnLeft()
-print("r: "..dump(r))
-drone.turnLeft()
-drone.turnLeft()
-drone.turnLeft()
-drone.turnRight()
-drone.turnRight()
-drone.turnRight()
-drone.turnRight()
-drone.up()
-drone.down()
+function shakeit(channel)
+	local drone = peripheral.wrap(channel)
+	print("DRONE "..channel.." GETTING DOWN NOW!")
+	local pos = {x=0,y=0,z=0}
+	while true do
+		--print("### 0 "..sys.id.." "..getId())
+		sys.yield()
 
+		if sys:receiveEvent({"input"}) ~= nil then
+			print("RECEIVED INPUT, ABORT EPIC MOVES NOW!")
+			break
+		end
+
+		local r = math.round(math.random() * 6)
+		if r == 6 then r = 0 end
+		if r == 0 then
+		--	drone.forward()
+		elseif r == 1 then
+		--	drone.back()
+		elseif r == 2 then
+			drone.up()
+		elseif r == 3 then
+			drone.down()
+		elseif r == 4 then
+			drone.turnRight()
+		else
+			drone.turnLeft()
+		end
+		print("OHYEAH!")
+	end
+end
+
+shakeit("dronetest:drone:2")
+
+--[[
+function a() shakeit("dronetest:drone:1") end
+jit.off(a,true) -- no effect?
+local a = coroutine.create(a)
+--local b = coroutine.create(function() shakeit("dronetest:drone:2") end)
+while true do
+	coroutine.resume(a)
+--	coroutine.resume(b)
+end
+--]]
+
+
+print("GOODBYE!!!!")
+return true
