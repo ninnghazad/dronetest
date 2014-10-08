@@ -33,25 +33,12 @@ end
 shell = sys.loadApi("shell")
 
 
--- Lock the doors!
---_G = getfenv(1)
-require = nil
-load = nil
-loadfile = nil
-loadstring = nil
-dofile = nil
-collectgarbage = nil
-getmetatable = nil
-setmetatable = nil
-getfenv = nil
-setfenv = nil
-package = nil
-debug = nil
-newproxy = nil
-math.randomseed = nil
-rawget = nil
-rawset = nil
-rawequal = nil
+
+
+-- print environment as it is now.
+for i,v in pairs(_G) do
+	print("bootstrap env: "..i.." ("..type(v)..")")
+end
 
 local id = getId()
 sys.id = id

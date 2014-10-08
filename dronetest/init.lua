@@ -867,18 +867,23 @@ end
 local function checkTarget(pos)
 	local node = minetest.get_node(pos)
 	if node ~= nil and node.name ~= "air" then
+		print("CHECK TARGET: node")
 		return false,"node"
 	end
 	--print(dump(minetest.env))
-	--local objs = get_objects(pos, 0.2)
-	
-	return true
-	--[[
+	local objs = minetest.get_objects_inside_radius(pos, 0.5)
+	print(dump(objs))
+	--return true
+	---[[
 	for i,o in ipairs(objs) do
-		if o.physical then
+		print("CHECK TARGET: object: "..o:get_luaentity().name.." "..dump(o).." "..dump(o:get_luaentity().physical))
+		if o:get_luaentity().physical then
+			print("CHECK TARGET: object")
 			return false,"object"
 		end
+		
 	end
+	print("CHECK TARGET: clear @ "..dump(pos))
 	return true
 	--]]
 end
