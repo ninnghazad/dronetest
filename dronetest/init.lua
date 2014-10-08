@@ -405,8 +405,6 @@ end
 local bootstrap = readFile(mod_dir.."/bootstrap.lua")
 local err = ""
 if type(bootstrap) ~= "string" then minetest.log("error","missing or unreadable bootstrap!") return false end
-bootstrap,err = loadstring(bootstrap)
-if type(bootstrap) ~= "function" then minetest.log("error","bad bootstrap: "..err) return false end
 
 -- Sys userspace API
 local sys = {}
@@ -529,6 +527,9 @@ local function activate_by_id(id,t,pos)
 	
 	-- overload print function to print to drone/computer's screen and not to servers stdout
 	env.print = function(msg) dronetest.print(id,msg) end
+
+	local bootstrap,err = loadstring(bootstrap)
+	if type(bootstrap) ~= "function" then minetest.log("error","bad bootstrap: "..err) error("bad bootstrap: "..err) end
 	
 	env._G = env
 	jit.off(bootstrap,true)
@@ -558,9 +559,9 @@ local function activate(pos)
 end
 
 local function deactivate_by_id(id)
-	dronetest.print(id,"drone #"..id.." deactivating.")
+	dronetest.print(id,"System #"..id.." deactivating.")
 	active_systems[id] = nil
-	dronetest.log("Drone #"..id.." has been deactivated.")
+	dronetest.log("System #"..id.." has been deactivated.")
 	
 	return true
 end
@@ -672,6 +673,7 @@ minetest.register_globalstep(function(dtime)
 				
 			else
 				-- System ended
+				--dronetest.log("System # "..id.." coroutine status: "..coroutine.status(co))
 				dronetest.log("System #"..id.."'s main process has ended! Restarting soon...")
 				active_systems[id] = nil
 			end
