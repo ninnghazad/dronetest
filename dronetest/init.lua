@@ -667,7 +667,7 @@ minetest.register_globalstep(function(dtime)
 			if coroutine.status(co) == "suspended" then
 				debug.sethook(co,coroutine.yield,"",dronetest.max_userspace_instructions)
 				local ret = {coroutine.resume(co)}
-				dronetest.log("Computer "..id.." result:"..dump(ret))
+			--	dronetest.log("Computer "..id.." result:"..dump(ret))
 				s.last_update = minetest.get_gametime()
 				
 			else
@@ -838,11 +838,14 @@ function drone.on_rightclick(self, clicker)
 	minetest.show_formspec(clicker:get_player_name(), "dronetest:drone:"..self.id, get_drone_formspec(self.id,self.channel))
 end
 dronetest.drone_actions = {
-	test = {desc="a test",func=function() print("TEST") end},
-	turnLeft = {desc="Rotates the turtle to the left.",func=function() print("TURNLEFT") end}
+	test = {desc="a test",func=function(id) print("TEST") end},
+	turnLeft = {desc="Rotates the turtle to the left.",func=function(id) dronetest.print(id,"TURNLEFT") end}
 }
-function drone.on_digiline_receive_line(self, channel, msg)
-	print("DRONE "..self.id.." received digiline on "..channel..": "..dump(msg))
+
+-- drones receive digiline messages only through transceivers, when responding to those messages,
+-- they act as if the transceiver would respond
+function drone.on_digiline_receive_line(self, channel, msg, senderPos)
+	print("DRONE "..self.id.." received digiline channel: "..channel.." type: "..type(msg))
 	if channel ~= self.channel then return end
 	
 	if type(msg) == "table" and type(msg.action) == "string" then
@@ -853,15 +856,19 @@ function drone.on_digiline_receive_line(self, channel, msg)
 				cap[n] = v.desc
 			end
 			print("drone responds to GET_CAPABILITIES")
+			-- act as if transceiver would send the message
+			
 			-- send capabilities
-			digiline:receptor_send(pos, digiline.rules.default,channel, {action = "CAPABILITIES",msg_id = msg.msg_id,msg = cap })
+			digiline:receptor_send(senderPos, digiline.rules.default,channel, {action = "CAPABILITIES",msg_id = msg.msg_id,msg = cap })
 			return
 		elseif dronetest.drone_actions[msg.action] ~= nil then
+			
 			-- execute function
-			local response = {dronetest.drone_actions[msg.action].func(msg.argv[1],msg.argv[2],msg.argv[3],msg.argv[4],msg.argv[5])}
+			local response = {dronetest.drone_actions[msg.action].func(self.id,msg.argv[1],msg.argv[2],msg.argv[3],msg.argv[4],msg.argv[5])}
+			-- act as if transceiver would send the message
 			
 			-- send response
-			digiline:receptor_send(pos, digiline.rules.default,channel, {action = msg.action ,msg_id = msg.msg_id,msg = response })
+			digiline:receptor_send(senderPos, digiline.rules.default,channel, {action = msg.action ,msg_id = msg.msg_id,msg = response })
 			return
 		end
 	end
@@ -888,6 +895,7 @@ function drone.on_activate(self, staticdata, dtime_s)
 			if r > 3 then r = 0 end
 			r = r / rad2unit
 			self.object:setyaw(r)
+			table.insert(dronetest.drones,self.id,self)
 		else
 			self.yaw = 0
 			self.id = -1
