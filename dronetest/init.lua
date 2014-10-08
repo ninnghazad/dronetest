@@ -666,12 +666,13 @@ minetest.register_globalstep(function(dtime)
 			-- TODO: some kind of timeout?!
 			if coroutine.status(co) == "suspended" then
 				debug.sethook(co,coroutine.yield,"",dronetest.max_userspace_instructions)
-				coroutine.resume(co)
+				local ret = {coroutine.resume(co)}
+				dronetest.log("Computer "..id.." result:"..dump(ret))
 				s.last_update = minetest.get_gametime()
 				
 			else
 				-- System ended
-				dronetest.log("System #"..id.."'s main process has endet! Restarting soon...")
+				dronetest.log("System #"..id.."'s main process has ended! Restarting soon...")
 				active_systems[id] = nil
 			end
 		end
