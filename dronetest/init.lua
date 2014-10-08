@@ -864,12 +864,29 @@ local function snapRotation(r)
 	print("snap 3: "..r)
 	return r
 end
-
--- the drone's actions are different in that they all take the calling system's id as first parameter, so they know where to print stuff.
+local function checkTarget(pos)
+	local node = minetest.get_node(pos)
+	if node ~= nil and node.name ~= "air" then
+		return false,"node"
+	end
+	--print(dump(minetest.env))
+	--local objs = get_objects(pos, 0.2)
+	
+	return true
+	--[[
+	for i,o in ipairs(objs) do
+		if o.physical then
+			return false,"object"
+		end
+	end
+	return true
+	--]]
+end
+-- the drone's actions are different in that they all take the drone's id as first parameter, and a print-callback as the second.
 dronetest.drone_actions = {
-	test = {desc="a test",func=function(id) print("TEST") end},
-	turnLeft = {desc="Rotates the turtle to the left.",
-		func=function(id)
+	test = {desc="a test",func=function(id,print) print("TEST") end},
+	turnLeft = {desc="Rotates the drone to the left.",
+		func=function(id,print)
 			local d = dronetest.drones[id]
 			local r = d.object:getyaw() 
 			local rot = (0.25 / rad2unit) / steps
@@ -880,6 +897,51 @@ dronetest.drone_actions = {
 				d.object:setyaw(r)
 				coroutine.yield()
 			end
+		end},
+	turnRight = {desc="Rotates the drone to the right.",
+		func = function(id,print)
+			local d = dronetest.drones[id]
+			local r = d.object:getyaw() 
+			local rot = (-0.25 / rad2unit) / steps
+			r = snapRotation(r)
+			for i=1,steps,1 do
+				r = r + rot
+				while r < 0 do r = r + 2*3.14159265359 end
+				d.object:setyaw(r)
+				coroutine.yield()
+			end
+		end},
+	up = {desc="Moves the drone up.",
+		func = function(id,print)
+			local d = dronetest.drones[id]
+			local pos = d.object:getpos()
+			local npos = table.copy(pos)
+			npos.y = npos.y + 1
+			local result,reason = checkTarget(npos)
+			if not result then return result,reason end
+			npos = table.copy(pos)
+			for i=1,steps,1 do
+				npos.y = npos.y + 1/steps
+				d.object:moveto(npos,true)
+				coroutine.yield()
+			end
+			return true
+		end},
+	down = {desc="Moves the drone down.",
+		func = function(id,print)
+			local d = dronetest.drones[id]
+			local pos = d.object:getpos()
+			local npos = table.copy(pos)
+			npos.y = npos.y - 1
+			local result,reason = checkTarget(npos)
+			if not result then return result,reason end
+			npos = table.copy(pos)
+			for i=1,steps,1 do
+				npos.y = npos.y - 1/steps
+				d.object:moveto(npos,true)
+				coroutine.yield()
+			end
+			return true
 		end},
 }
 
@@ -905,7 +967,7 @@ function drone.on_digiline_receive_line(self, channel, msg, senderPos)
 		elseif dronetest.drone_actions[msg.action] ~= nil then
 			if msg.argv == nil or type(msg.argv) ~= "table" then msg.argv = {} end
 			-- execute function
-			local response = {dronetest.drone_actions[msg.action].func(self.id,msg.argv[1],msg.argv[2],msg.argv[3],msg.argv[4],msg.argv[5])}
+			local response = {dronetest.drone_actions[msg.action].func(self.id,msg.print,msg.argv[1],msg.argv[2],msg.argv[3],msg.argv[4],msg.argv[5])}
 			-- act as if transceiver would send the message
 			
 			-- send response

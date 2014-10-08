@@ -1,6 +1,16 @@
 local peripheral = sys.loadApi("peripheral")
 
-local display = peripheral.wrap("dronetest:drone:1")
+local drone = peripheral.wrap("dronetest:drone:1")
 print("WRAPPED")
-local r = display.turnLeft()
+local r = drone.turnLeft()
 print("r: "..dump(r))
+drone.turnLeft()
+drone.turnLeft()
+drone.turnLeft()
+drone.turnRight()
+drone.turnRight()
+drone.turnRight()
+drone.turnRight()
+drone.up()
+drone.down()
+

@@ -33,8 +33,11 @@ function peripheral.wrap(channel)
 		newp[name] = function(a,b,c,d,e)
 			local pos = active_systems[sys.id].pos
 			local msg_id = sys:getUniqueId() 
+			
+			-- we attach a print() function, so the peripheral, when called from a computer, can print to its screen
+			
 			-- send action
-			digiline:receptor_send(pos, digiline.rules.default,channel, {action=name,argv={a,b,c,d,e},msg_id = msg_id})
+			digiline:receptor_send(pos, digiline.rules.default,channel, {action=name,argv={a,b,c,d,e},msg_id=msg_id,print=function(msg) print(msg) end})
 			
 			-- receive answer, see above
 			local e = nil

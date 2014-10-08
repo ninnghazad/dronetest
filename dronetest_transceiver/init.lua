@@ -47,6 +47,7 @@ local on_digiline_receive = function(pos, node, channel, msg)
 end
 
 local transceiver_box = {
+	-- TODO: this should be wallmounted instead
 	type = "fixed",
 	fixed = { -4/16, -4/16, 6/16, 4/16, 4/16, 8/16 }
 }
@@ -68,6 +69,7 @@ minetest.register_node("dronetest_transceiver:transceiver", {
 		local meta = minetest.get_meta(pos)
 		meta:set_string("channel","dronetest:transceiver:0")
 	end,
+	
 	after_place_node = function (pos, placer, itemstack)
 		--[[local param2 = minetest.get_node(pos).param2
 		if param2 == 0 or param2 == 1 then
