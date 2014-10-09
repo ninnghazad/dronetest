@@ -8,20 +8,20 @@ This is not ready for use.
 <img src="http://dunkelraum.net/share/screen4.png"/>
 
 ###How to use:
-Install in mods/ as "dronetest".  
-'/giveme dronetest:computer'        to get a computer
-'/giveme dronetest:drone'           to get a drone-spawner
-'/giveme dronetest_display:display' to get a display
-'/giveme dronetest_transceiver:transceiver' to get a display
-
-Display, transceiver and computer must touch or be connected using digilines.
-Right-click display and set channel to "dronetest:computer:1".
-Right-click transcevier and set channel to "dronetest:transceiver:1".
-Right-click computer and click "ON".
-Type 'id' into input field (lower left) and click 'EXE'.
-Press 'ESC' to leave and watch display to see output.
-
-Also try 'time' or 'ls'. There are more commands, like 'dance' for drones.
+Install in mods/ as "dronetest".    
+'/giveme dronetest:computer'        to get a computer  
+'/giveme dronetest:drone'           to get a drone-spawner  
+'/giveme dronetest_display:display' to get a display  
+'/giveme dronetest_transceiver:transceiver' to get a display  
+  
+Display, transceiver and computer must touch or be connected using digilines.  
+Right-click display and set channel to "dronetest:computer:1".  
+Right-click transcevier and set channel to "dronetest:transceiver:1".  
+Right-click computer and click "ON".  
+Type 'id' into input field (lower left) and click 'EXE'.  
+Press 'ESC' to leave and watch display to see output.  
+  
+Also try 'time' or 'ls'. There are more commands, like 'dance' for drones.  
 
 ###Infos:
 Commands and APIs have access to global and sandboxed environment,  
