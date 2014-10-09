@@ -472,7 +472,7 @@ userspace_environment.setfenv = setfenv
 --userspace_environment.loadfile = loadfile
 userspace_environment.pcall = pcall
 userspace_environment.xpcall = xpcall
-
+--[[
 -- coroutine for userspace
 userspace_environment.coroutine = table.copy(coroutine)
 userspace_environment.coroutine.create = function(f)
@@ -488,7 +488,7 @@ userspace_environment.coroutine.resume = function(co)
 	coroutine.resume(co) 
 	coroutine.yield()
 end
-
+--]]
 
 
 

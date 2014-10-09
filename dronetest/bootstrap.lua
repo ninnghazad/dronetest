@@ -17,6 +17,7 @@ end
 
 print("System #"..(sys.id).." is booting!")
 -- Load the APIs
+coroutine    = sys.loadApi("coroutine")
 os    = sys.loadApi("os")
 fs    = sys.loadApi("fs")
 term  = sys.loadApi("term")

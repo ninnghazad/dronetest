@@ -1,8 +1,8 @@
 # The last id given to a computer.
-last_id = 2
+last_id = 3
 # Interval to run LUA-coroutines at.
 globalstep_interval = 0.01
 # The last id given to a drone.
-last_drone_id = 2
+last_drone_id = 3
 # How many instructions may a player execute on a system without yielding?
 max_userspace_instructions = 1000000
