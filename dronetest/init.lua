@@ -105,8 +105,10 @@ dronetest = {
 
 --Config documentation, items that have one get save in config and can be changed by menu
 local doc = {
-	last_id = "The last id given to a computer or drone.",
+	last_id = "The last id given to a computer.",
+	last_drone_id = "The last id given to a drone.",
 	globalstep_interval = "Interval to run LUA-coroutines at.",
+	max_userspace_instructions = "How many instructions may a player execute on a system without yielding?"
 }
 
 local function count(t)
@@ -549,20 +551,25 @@ end
 --userspace_environment.loadfile = loadfile
 userspace_environment.pcall = pcall
 userspace_environment.xpcall = xpcall
-
--- coroutines not yet working from userspace
--- the jit.off() trick does not work as it does with the main coroutine, and i don't know why
----[[
--- i'm not sure it is safe yet
+--[[
+-- coroutine for userspace
 userspace_environment.coroutine = table.copy(coroutine)
-
--- this i need because otherwise yielding will fail. has to do with luajit's coco
 userspace_environment.coroutine.create = function(f)
---	jit.off(true)
 	jit.off(f,true)
-	return coroutine.create(f)
+	local e = getfenv(2)
+	setfenv(f,e)
+	local ff = function() xpcall(f,function(msg) if msg == "attempt to yield across C-call boundary" then msg = "too many instructions without yielding" end dronetest.print(e.sys.id,"Error in coroutine: '"..msg.."':"..dump(debug.traceback())) coroutine.yield() end) end
+	local co = coroutine.create(ff)
+	return co
+end
+userspace_environment.coroutine.resume = function(co)
+	debug.sethook(co,coroutine.yield,"",dronetest.max_userspace_instructions)
+	coroutine.resume(co) 
+	coroutine.yield()
 end
 --]]
+
+
 
 userspace_environment.loadfile = function(s)
 	local f,err = loadfile(s)
@@ -643,6 +650,7 @@ local function activate(pos)
 end
 
 local function deactivate_by_id(id)
+	
 	dronetest.print(id,"System #"..id.." deactivating.")
 	active_systems[id] = nil
 	dronetest.log("System #"..id.." has been deactivated.")
@@ -650,6 +658,7 @@ local function deactivate_by_id(id)
 	return true
 end
 local function deactivate(pos)
+	
 	local meta = minetest.get_meta(pos)
 	local id = meta:get_int("id")
 	meta:set_int("status",0)
@@ -807,7 +816,7 @@ local function snapRotation(r)
 	return r
 end
 
-local function checkTarget(pos)
+local function drone_check_target(pos)
 	local node = minetest.get_node(pos)
 	if node ~= nil and node.name ~= "air" then
 		print("CHECK TARGET: node")
@@ -831,6 +840,38 @@ local function checkTarget(pos)
 	--]]
 end
 
+local BLOCKSIZE = 16
+local function get_blockpos(pos)
+	return {
+		x = math.floor(pos.x/BLOCKSIZE),
+		y = math.floor(pos.y/BLOCKSIZE),
+		z = math.floor(pos.z/BLOCKSIZE)}
+end
+
+function drone_move_to_pos(drone,target)
+	local result,reason = drone_check_target(target)
+	if not result then return result,reason end
+	
+	local pos = drone.object:getpos()
+	
+	local dir = target
+	dir.x = dir.x - pos.x
+	dir.y = dir.y - pos.y
+	dir.z = dir.z - pos.z
+	local old = pos
+	for i=1,steps,1 do
+		pos.x = pos.x + dir.x/steps
+		pos.y = pos.y + dir.y/steps
+		pos.z = pos.z + dir.z/steps
+		drone.object:moveto(pos,true)
+		coroutine.yield()
+	end
+	if get_blockpos(old) ~= get_blockpos(pos) then
+		minetest.forceload_block(pos)
+		minetest.forceload_free_block(old)
+	end
+	return true
+end
 -- the drone's actions are different in that they all take the drone's id as first parameter, and a print-callback as the second.
 dronetest.drone_actions = {
 	test = {desc="a test",func=function(id,print) print("TEST") end},
@@ -842,7 +883,6 @@ dronetest.drone_actions = {
 			r = snapRotation(r)
 			for i=1,steps,1 do
 				r = r + rot
-			
 				d.object:setyaw(r)
 				coroutine.yield()
 			end
@@ -864,33 +904,47 @@ dronetest.drone_actions = {
 		func = function(id,print)
 			local d = dronetest.drones[id]
 			local pos = d.object:getpos()
-			local npos = table.copy(pos)
-			npos.y = npos.y + 1
-			local result,reason = checkTarget(npos)
-			if not result then return result,reason end
-			npos = table.copy(pos)
-			for i=1,steps,1 do
-				npos.y = npos.y + 1/steps
-				d.object:moveto(npos,true)
-				coroutine.yield()
-			end
-			return true
+			local target = table.copy(pos)
+			target.y = target.y + 1
+			return drone_move_to_pos(d,target)
 		end},
 	down = {desc="Moves the drone down.",
 		func = function(id,print)
 			local d = dronetest.drones[id]
 			local pos = d.object:getpos()
-			local npos = table.copy(pos)
-			npos.y = npos.y - 1
-			local result,reason = checkTarget(npos)
-			if not result then return result,reason end
-			npos = table.copy(pos)
-			for i=1,steps,1 do
-				npos.y = npos.y - 1/steps
-				d.object:moveto(npos,true)
-				coroutine.yield()
-			end
-			return true
+			local target = table.copy(pos)
+			target.y = target.y - 1
+			return drone_move_to_pos(d,target)
+		end},
+	forward = {desc="Moves the drone forward.",
+		func = function(id,print)
+			local d = dronetest.drones[id]
+			local pos = d.object:getpos()
+			local yaw = d.object:getyaw()
+			local dir = yaw2dir(snapRotation(yaw))
+			if dir == 0 then dir = 2 
+			elseif dir == 2 then dir = 0 end
+			local target = minetest.facedir_to_dir(dir)
+			target.x = pos.x + target.x 
+			target.y = pos.y + target.y 
+			target.z = pos.z + target.z 
+			return drone_move_to_pos(d,target)
+		end},
+	back = {desc="Moves the drone back.",
+		func = function(id,print)
+			local d = dronetest.drones[id]
+			local pos = d.object:getpos()
+			local yaw = d.object:getyaw()
+			local dir = yaw2dir(snapRotation(yaw))
+			dir = dir + 2
+			if dir > 3 then dir = dir - 4 end
+			if dir == 0 then dir = 2 
+			elseif dir == 2 then dir = 0 end
+			local target = minetest.facedir_to_dir(dir)
+			target.x = pos.x + target.x 
+			target.y = pos.y + target.y 
+			target.z = pos.z + target.z 
+			return drone_move_to_pos(d,target)
 		end},
 }
 
@@ -917,6 +971,7 @@ function drone.on_digiline_receive_line(self, channel, msg, senderPos)
 			return
 		elseif dronetest.drone_actions[msg.action] ~= nil then
 			if msg.argv == nil or type(msg.argv) ~= "table" then msg.argv = {} end
+			if dronetest.drones[self.id] == nil then print("drone #"..self.id.." not reachable!") return end
 			print("drone #"..self.id.." will execute "..msg.action.." from "..channel..".")
 		--	print("PRE: "..dump(dronetest.drones[self.id]).." "..type(self.id))
 			-- execute function
@@ -995,7 +1050,7 @@ function drone.on_activate(self, staticdata, dtime_s)
 	pos.y = math.round(pos.y)
 	pos.z = math.round(pos.z)
 	self.object:setpos(pos)
-	self.object:setyaw(self.yaw)
+	self.object:setyaw(snapRotation(self.yaw))
 	--print("Add drone "..self.id.." to list.")
 	
 	
@@ -1044,7 +1099,7 @@ minetest.register_node("dronetest:drone", {
 		dronetest.log("Drone spawner placed at "..minetest.pos_to_string(pos))
 		local d = minetest.add_entity(pos,"dronetest:drone")
 		d = d:get_luaentity()
-		print("add drone "..self.id.." to list.")
+		print("add drone "..d.id.." to list.")
 		dronetest.drones[d.id]=d
 		--print("SPAWNED DRONE "..dronetest.last_drone_id.." "..dump())
 		minetest.remove_node(pos)
@@ -1103,10 +1158,14 @@ minetest.register_node("dronetest:computer", {
 		meta:set_string("channel",channel)
 		mkdir(mod_dir.."/"..dronetest.last_id)
 		dronetest.log("Computer #"..dronetest.last_id.." constructed at "..minetest.pos_to_string(pos))		
-		save()
+		if not minetest.forceload_block(pos) then
+			dronetest.log("WARNING: Could not forceload block at "..dump(pos)..".")
+		end
+		save() -- so we remember the changed last_id in case of crashes
 	end,
 	on_destruct = function(pos, oldnode)
 		deactivate(pos)
+		minetest.forceload_free_block(pos)
 	end,
 	on_event_receive = function(event)
 		
@@ -1179,46 +1238,33 @@ if minetest.setting_getbool("log_mods") then
 	minetest.log("action","[MOD] "..minetest.get_current_modname().." -- loaded!")
 end
 
---[[ -- works
-local r
-while true do
-	r = math.random(0,5)
-	if r == 2 then
-		print("up")
-	elseif r == 3 then
-		print("down")
-	elseif r == 4 then
-		print("right")
-	else
-		print("left")
-	end
-end
---]]
+
 --[[
-local f = function()
-	local r
-	while true do
-		coroutine.yield()
-		r = math.random(0,5)
-		--print("AHA")
-		
-		
-		if r == 2 then
-			dronetest.print(1,"test")
-		elseif r == 3 then
-			dronetest.print(1,"test")
-		elseif r == 4 then
-			dronetest.print(1,"test")
-		else
-			dronetest.print(1,"test")
+
+local f = function() 
+
+	local f = function() 
+		local i
+		for i = 1,1000000,1 do
+			print("AHA! "..i)
+		--	coroutine.yield()
 		end
-		
 	end
+	--jit.off(f,true)
+	local co = coroutine.create(function() xpcall(f,print) end)
+
+	while coroutine.status(co) == "suspended" do 
+	--	debug.sethook(co,coroutine.yield,"",dronetest.max_userspace_instructions)
+		coroutine.resume(co) 
+	end
+
 end
 jit.off(f,true)
-local co = coroutine.create(f)
+setfenv(f,getfenv(1))
 
-while true do 
+local co = coroutine.create(function() xpcall(f,print) end)
+
+while coroutine.status(co) == "suspended" do 
 	debug.sethook(co,coroutine.yield,"",dronetest.max_userspace_instructions)
 	coroutine.resume(co) 
 end
