@@ -12,7 +12,7 @@ Install in mods/ as "dronetest".
 '/giveme dronetest:computer'        to get a computer  
 '/giveme dronetest:drone'           to get a drone-spawner  
 '/giveme dronetest_display:display' to get a display  
-'/giveme dronetest_transceiver:transceiver' to get a display  
+'/giveme dronetest_transceiver:transceiver' to get a transceiver  
   
 Display, transceiver and computer must touch or be connected using digilines.  
 Right-click display and set channel to "dronetest:computer:1".  
