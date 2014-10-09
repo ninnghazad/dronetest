@@ -33,7 +33,7 @@ function shakeit(channel)
 	end
 end
 
-shakeit("dronetest:drone:2")
+shakeit("dronetest:drone:1")
 
 --[[
 function a() shakeit("dronetest:drone:1") end
