@@ -840,6 +840,7 @@ function drone.on_digiline_receive_line(self, channel, msg, senderPos)
 			return
 		elseif dronetest.drone_actions[msg.action] ~= nil then
 			if msg.argv == nil or type(msg.argv) ~= "table" then msg.argv = {} end
+			if dronetest.drones[self.id] == nil then print("drone #"..self.id.." not reachable!") return end
 			print("drone #"..self.id.." will execute "..msg.action.." from "..channel..".")
 		--	print("PRE: "..dump(dronetest.drones[self.id]).." "..type(self.id))
 			-- execute function
