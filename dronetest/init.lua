@@ -75,8 +75,10 @@ dronetest = {
 
 --Config documentation, items that have one get save in config and can be changed by menu
 local doc = {
-	last_id = "The last id given to a computer or drone.",
+	last_id = "The last id given to a computer.",
+	last_drone_id = "The last id given to a drone.",
 	globalstep_interval = "Interval to run LUA-coroutines at.",
+	max_userspace_instructions = "How many instructions may a player execute on a system without yielding?"
 }
 
 local function count(t)
@@ -471,19 +473,24 @@ userspace_environment.setfenv = setfenv
 userspace_environment.pcall = pcall
 userspace_environment.xpcall = xpcall
 
--- coroutines not yet working from userspace
--- the jit.off() trick does not work as it does with the main coroutine, and i don't know why
----[[
--- i'm not sure it is safe yet
+-- coroutine for userspace
 userspace_environment.coroutine = table.copy(coroutine)
-
--- this i need because otherwise yielding will fail. has to do with luajit's coco
 userspace_environment.coroutine.create = function(f)
---	jit.off(true)
 	jit.off(f,true)
-	return coroutine.create(f)
+	local e = getfenv(2)
+	setfenv(f,e)
+	local ff = function() xpcall(f,function(msg) if msg == "attempt to yield across C-call boundary" then msg = "too many instructions without yielding" end dronetest.print(e.sys.id,"Error in coroutine: '"..msg.."':"..dump(debug.traceback())) coroutine.yield() end) end
+	local co = coroutine.create(ff)
+	return co
 end
---]]
+userspace_environment.coroutine.resume = function(co)
+	debug.sethook(co,coroutine.yield,"",dronetest.max_userspace_instructions)
+	coroutine.resume(co) 
+	coroutine.yield()
+end
+
+
+
 
 userspace_environment.loadfile = function(s)
 	local f,err = loadfile(s)
@@ -960,7 +967,7 @@ minetest.register_node("dronetest:drone", {
 		dronetest.log("Drone spawner placed at "..minetest.pos_to_string(pos))
 		local d = minetest.add_entity(pos,"dronetest:drone")
 		d = d:get_luaentity()
-		print("add drone "..self.id.." to list.")
+		print("add drone "..d.id.." to list.")
 		dronetest.drones[d.id]=d
 		--print("SPAWNED DRONE "..dronetest.last_drone_id.." "..dump())
 		minetest.remove_node(pos)
@@ -1095,46 +1102,33 @@ if minetest.setting_getbool("log_mods") then
 	minetest.log("action","[MOD] "..minetest.get_current_modname().." -- loaded!")
 end
 
---[[ -- works
-local r
-while true do
-	r = math.random(0,5)
-	if r == 2 then
-		print("up")
-	elseif r == 3 then
-		print("down")
-	elseif r == 4 then
-		print("right")
-	else
-		print("left")
-	end
-end
---]]
+
 --[[
-local f = function()
-	local r
-	while true do
-		coroutine.yield()
-		r = math.random(0,5)
-		--print("AHA")
-		
-		
-		if r == 2 then
-			dronetest.print(1,"test")
-		elseif r == 3 then
-			dronetest.print(1,"test")
-		elseif r == 4 then
-			dronetest.print(1,"test")
-		else
-			dronetest.print(1,"test")
+
+local f = function() 
+
+	local f = function() 
+		local i
+		for i = 1,1000000,1 do
+			print("AHA! "..i)
+		--	coroutine.yield()
 		end
-		
 	end
+	--jit.off(f,true)
+	local co = coroutine.create(function() xpcall(f,print) end)
+
+	while coroutine.status(co) == "suspended" do 
+	--	debug.sethook(co,coroutine.yield,"",dronetest.max_userspace_instructions)
+		coroutine.resume(co) 
+	end
+
 end
 jit.off(f,true)
-local co = coroutine.create(f)
+setfenv(f,getfenv(1))
 
-while true do 
+local co = coroutine.create(function() xpcall(f,print) end)
+
+while coroutine.status(co) == "suspended" do 
 	debug.sethook(co,coroutine.yield,"",dronetest.max_userspace_instructions)
 	coroutine.resume(co) 
 end
