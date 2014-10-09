@@ -18,9 +18,9 @@ local function shakeit(channel)
 		r = math.random(0,5)
 		
 		if r == 0 then
-		--	drone.forward()
+			drone.forward()
 		elseif r == 1 then
-		--	drone.back()
+			drone.back()
 		elseif r == 2 then
 			drone.up()
 		elseif r == 3 then

@@ -732,7 +732,7 @@ local function snapRotation(r)
 	return r
 end
 
-local function checkTarget(pos)
+local function drone_check_target(pos)
 	local node = minetest.get_node(pos)
 	if node ~= nil and node.name ~= "air" then
 		print("CHECK TARGET: node")
@@ -765,7 +765,7 @@ local function get_blockpos(pos)
 end
 
 function drone_move_to_pos(drone,target)
-	local result,reason = checkTarget(target)
+	local result,reason = drone_check_target(target)
 	if not result then return result,reason end
 	
 	local pos = drone.object:getpos()
@@ -799,7 +799,6 @@ dronetest.drone_actions = {
 			r = snapRotation(r)
 			for i=1,steps,1 do
 				r = r + rot
-			
 				d.object:setyaw(r)
 				coroutine.yield()
 			end
@@ -823,35 +822,45 @@ dronetest.drone_actions = {
 			local pos = d.object:getpos()
 			local target = table.copy(pos)
 			target.y = target.y + 1
-			
 			return drone_move_to_pos(d,target)
-			--[[
-			local result,reason = checkTarget(npos)
-			if not result then return result,reason end
-			npos = table.copy(pos)
-			for i=1,steps,1 do
-				npos.y = npos.y + 1/steps
-				d.object:moveto(npos,true)
-				coroutine.yield()
-			end
-			return true
-			--]]
 		end},
 	down = {desc="Moves the drone down.",
 		func = function(id,print)
 			local d = dronetest.drones[id]
 			local pos = d.object:getpos()
-			local npos = table.copy(pos)
-			npos.y = npos.y - 1
-			local result,reason = checkTarget(npos)
-			if not result then return result,reason end
-			npos = table.copy(pos)
-			for i=1,steps,1 do
-				npos.y = npos.y - 1/steps
-				d.object:moveto(npos,true)
-				coroutine.yield()
-			end
-			return true
+			local target = table.copy(pos)
+			target.y = target.y - 1
+			return drone_move_to_pos(d,target)
+		end},
+	forward = {desc="Moves the drone forward.",
+		func = function(id,print)
+			local d = dronetest.drones[id]
+			local pos = d.object:getpos()
+			local yaw = d.object:getyaw()
+			local dir = yaw2dir(snapRotation(yaw))
+			if dir == 0 then dir = 2 
+			elseif dir == 2 then dir = 0 end
+			local target = minetest.facedir_to_dir(dir)
+			target.x = pos.x + target.x 
+			target.y = pos.y + target.y 
+			target.z = pos.z + target.z 
+			return drone_move_to_pos(d,target)
+		end},
+	back = {desc="Moves the drone back.",
+		func = function(id,print)
+			local d = dronetest.drones[id]
+			local pos = d.object:getpos()
+			local yaw = d.object:getyaw()
+			local dir = yaw2dir(snapRotation(yaw))
+			dir = dir + 2
+			if dir > 3 then dir = dir - 4 end
+			if dir == 0 then dir = 2 
+			elseif dir == 2 then dir = 0 end
+			local target = minetest.facedir_to_dir(dir)
+			target.x = pos.x + target.x 
+			target.y = pos.y + target.y 
+			target.z = pos.z + target.z 
+			return drone_move_to_pos(d,target)
 		end},
 }
 
@@ -957,7 +966,7 @@ function drone.on_activate(self, staticdata, dtime_s)
 	pos.y = math.round(pos.y)
 	pos.z = math.round(pos.z)
 	self.object:setpos(pos)
-	self.object:setyaw(self.yaw)
+	self.object:setyaw(snapRotation(self.yaw))
 	--print("Add drone "..self.id.." to list.")
 	
 	
