@@ -566,6 +566,7 @@ local function activate(pos)
 end
 
 local function deactivate_by_id(id)
+	
 	dronetest.print(id,"System #"..id.." deactivating.")
 	active_systems[id] = nil
 	dronetest.log("System #"..id.." has been deactivated.")
@@ -573,6 +574,7 @@ local function deactivate_by_id(id)
 	return true
 end
 local function deactivate(pos)
+	
 	local meta = minetest.get_meta(pos)
 	local id = meta:get_int("id")
 	meta:set_int("status",0)
@@ -754,6 +756,38 @@ local function checkTarget(pos)
 	--]]
 end
 
+local BLOCKSIZE = 16
+local function get_blockpos(pos)
+	return {
+		x = math.floor(pos.x/BLOCKSIZE),
+		y = math.floor(pos.y/BLOCKSIZE),
+		z = math.floor(pos.z/BLOCKSIZE)}
+end
+
+function drone_move_to_pos(drone,target)
+	local result,reason = checkTarget(target)
+	if not result then return result,reason end
+	
+	local pos = drone.object:getpos()
+	
+	local dir = target
+	dir.x = dir.x - pos.x
+	dir.y = dir.y - pos.y
+	dir.z = dir.z - pos.z
+	local old = pos
+	for i=1,steps,1 do
+		pos.x = pos.x + dir.x/steps
+		pos.y = pos.y + dir.y/steps
+		pos.z = pos.z + dir.z/steps
+		drone.object:moveto(pos,true)
+		coroutine.yield()
+	end
+	if get_blockpos(old) ~= get_blockpos(pos) then
+		minetest.forceload_block(pos)
+		minetest.forceload_free_block(old)
+	end
+	return true
+end
 -- the drone's actions are different in that they all take the drone's id as first parameter, and a print-callback as the second.
 dronetest.drone_actions = {
 	test = {desc="a test",func=function(id,print) print("TEST") end},
@@ -787,8 +821,11 @@ dronetest.drone_actions = {
 		func = function(id,print)
 			local d = dronetest.drones[id]
 			local pos = d.object:getpos()
-			local npos = table.copy(pos)
-			npos.y = npos.y + 1
+			local target = table.copy(pos)
+			target.y = target.y + 1
+			
+			return drone_move_to_pos(d,target)
+			--[[
 			local result,reason = checkTarget(npos)
 			if not result then return result,reason end
 			npos = table.copy(pos)
@@ -798,6 +835,7 @@ dronetest.drone_actions = {
 				coroutine.yield()
 			end
 			return true
+			--]]
 		end},
 	down = {desc="Moves the drone down.",
 		func = function(id,print)
@@ -1027,10 +1065,14 @@ minetest.register_node("dronetest:computer", {
 		meta:set_string("channel",channel)
 		mkdir(mod_dir.."/"..dronetest.last_id)
 		dronetest.log("Computer #"..dronetest.last_id.." constructed at "..minetest.pos_to_string(pos))		
-		save()
+		if not minetest.forceload_block(pos) then
+			dronetest.log("WARNING: Could not forceload block at "..dump(pos)..".")
+		end
+		save() -- so we remember the changed last_id in case of crashes
 	end,
 	on_destruct = function(pos, oldnode)
 		deactivate(pos)
+		minetest.forceload_free_block(pos)
 	end,
 	on_event_receive = function(event)
 		

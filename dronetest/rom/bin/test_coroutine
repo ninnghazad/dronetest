@@ -24,11 +24,12 @@ co = coroutine.create(f1)
 while coroutine.status(co) == "suspended" do 
 	coroutine.resume(co)
 end
-
+print("1: OK!")
 co = coroutine.create(f2)
 while coroutine.status(co) == "suspended" do 
 	coroutine.resume(co)
 end
+print("2: OK!")
 
 return true
 
