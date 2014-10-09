@@ -1,10 +1,11 @@
 -- jit.off(true) -- no effect?
 local peripheral = sys.loadApi("peripheral")
+local channel = "dronetest:drone:1"
 
-function shakeit(channel)
+local function shakeit(channel)
 	local drone = peripheral.wrap(channel)
 	print("DRONE "..channel.." GETTING DOWN NOW!")
-	local pos = {x=0,y=0,z=0}
+	local r
 	while true do
 		--print("### 0 "..sys.id.." "..getId())
 		sys.yield()
@@ -14,8 +15,8 @@ function shakeit(channel)
 			break
 		end
 
-		local r = math.round(math.random() * 6)
-		if r == 6 then r = 0 end
+		r = math.random(0,5)
+		
 		if r == 0 then
 		--	drone.forward()
 		elseif r == 1 then
@@ -29,22 +30,13 @@ function shakeit(channel)
 		else
 			drone.turnLeft()
 		end
+		
 		print("OHYEAH!")
 	end
 end
 
 shakeit("dronetest:drone:1")
 
---[[
-function a() shakeit("dronetest:drone:1") end
-jit.off(a,true) -- no effect?
-local a = coroutine.create(a)
---local b = coroutine.create(function() shakeit("dronetest:drone:2") end)
-while true do
-	coroutine.resume(a)
---	coroutine.resume(b)
-end
---]]
 
 
 print("GOODBYE!!!!")

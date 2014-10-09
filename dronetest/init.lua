@@ -208,6 +208,15 @@ minetest.register_chatcommand("dronetest", {
 	end,
 })
 
+minetest.register_chatcommand("dronetest:wipe",{
+	description = "dronetest garbage collect",
+	privs = {server=true},
+	func = function(name, param)
+		dronetest.log("dronetest cmd called")
+		collectgarbage()
+	end,
+})
+
 minetest.register_chatcommand("dronetest:info", {
 	description = "dronetest infos",
 	privs = {server=true},
@@ -227,7 +236,7 @@ minetest.register_chatcommand("dronetest:info", {
 			num_buffsize = num_buffsize + string.len(v)
 		end
 		info = info.."# total size of all buffers: "..num_buffsize.."\n"
-		
+		info = info.."total # bytes lua-mem: "..collectgarbage("count").."\n"
 		minetest.chat_send_player(name,info)
 	end,
 })
@@ -641,9 +650,10 @@ minetest.register_abm({
 	interval = 1,
 	chance = 1,
 	action = function(pos)
-		for id,drone in pairs(dronetest.drones) do
-			print("active drone: "..id.." "..dump(drone))
-		end
+		--for id,drone in pairs(dronetest.drones) do
+		--	print("active drone: "..id.." "..dump(drone))
+		--end
+	
 		-- this is now in dronetest.print, where it should be
 		--[[
 		local meta = minetest.get_meta(pos)
@@ -698,7 +708,6 @@ local steps = 10
 local rad2unit = 1 / (2*3.14159265359)
 local function yaw2dir(yaw)
 	local dir = yaw * rad2unit
-	print("yaw2dir: "..yaw.." > "..dir)
 	if dir > 0.875 or dir <= 0.125 then return 0 
 	elseif dir > 0.125 and dir <= 0.375 then return 1 
 	elseif dir > 0.375 and dir <= 0.625 then return 2
@@ -708,15 +717,9 @@ end
 local function snapRotation(r)
 	while r < 0 do r = r + (1/rad2unit) end
 	while r > 1/rad2unit do r = r - (1/rad2unit) end
-	print("snap 0: "..r)
 	r = r * rad2unit
-	print("snap 1: "..r)
 	r = math.round(r * 4) / 4
-	--print("snap 1: "..r)
-	--if r > 3 then r = 0 end
-	print("snap 2: "..r)
 	r = r / rad2unit
-	print("snap 3: "..r)
 	return r
 end
 
@@ -834,7 +837,7 @@ function drone.on_digiline_receive_line(self, channel, msg, senderPos)
 		--	print("PRE: "..dump(dronetest.drones[self.id]).." "..type(self.id))
 			-- execute function
 			local response = {dronetest.drone_actions[msg.action].func(self.id,msg.print,msg.argv[1],msg.argv[2],msg.argv[3],msg.argv[4],msg.argv[5])}
-			
+			--local response = {true}
 			print("drone #"..self.id.." finished action '"..msg.action.."': "..dump(response))
 			print("drone #"..self.id.." will answer on "..channel..".")
 			
@@ -1091,3 +1094,48 @@ if minetest.setting_getbool("log_mods") then
 	minetest.register_on_shutdown(function() minetest.log("action", "[MOD] "..mod_name.." -- unloaded!") end)
 	minetest.log("action","[MOD] "..minetest.get_current_modname().." -- loaded!")
 end
+
+--[[ -- works
+local r
+while true do
+	r = math.random(0,5)
+	if r == 2 then
+		print("up")
+	elseif r == 3 then
+		print("down")
+	elseif r == 4 then
+		print("right")
+	else
+		print("left")
+	end
+end
+--]]
+--[[
+local f = function()
+	local r
+	while true do
+		coroutine.yield()
+		r = math.random(0,5)
+		--print("AHA")
+		
+		
+		if r == 2 then
+			dronetest.print(1,"test")
+		elseif r == 3 then
+			dronetest.print(1,"test")
+		elseif r == 4 then
+			dronetest.print(1,"test")
+		else
+			dronetest.print(1,"test")
+		end
+		
+	end
+end
+jit.off(f,true)
+local co = coroutine.create(f)
+
+while true do 
+	debug.sethook(co,coroutine.yield,"",dronetest.max_userspace_instructions)
+	coroutine.resume(co) 
+end
+--]]

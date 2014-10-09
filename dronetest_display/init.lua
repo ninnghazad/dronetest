@@ -60,6 +60,7 @@ dronetest_display.actions = {
 }
 
 local on_digiline_receive = function(pos, node, channel, msg)
+	local n,v
 	local meta = minetest.get_meta(pos)
 	local setchan = meta:get_string("channel")
 	if setchan ~= channel then return end
@@ -189,6 +190,8 @@ function dronetest.create_lines(text)
 	local tab = {}
 	local pre
 	local post = ""
+	local word
+	local _,i
 	local lines = {}
 	for _,word in ipairs(text:split("\n")) do
 	
@@ -227,6 +230,7 @@ function dronetest.generate_texture(lines)
 	--local texture = "[combine:"..LCD_WITH.."x"..LCD_WITH..":0,0=screen.png"
 	local texture = "[combine:"..LCD_WITH.."x"..LCD_WITH..""
 	local ypos = LCD_PADDING
+	local i
 	for i = 1, #lines do
 		texture = texture..dronetest.generate_line(lines[i], ypos)
 		ypos = ypos + LINE_HEIGHT
@@ -239,6 +243,7 @@ function dronetest.generate_line(s, ypos)
 	local i = 1
 	local parsed = {}
 	local width = 0
+	
 	local chars = 0
 	while chars < max_chars and i <= #s do
 		local file = nil
