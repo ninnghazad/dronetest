@@ -21,21 +21,50 @@ package.cpath = package.cpath
 
 lfs = require("lfs")
 
+-- convert a path into a table, ignoring ..
+local function parse_filename(filename)
+	local path = {}
+	for s in filename:gmatch("[^/]*") do
+		if s == ".." then
+			if #path == 0 then
+				return nil
+			end
+			table.remove(path)
+		elseif s ~= "." then
+			table.insert(path, s)
+		end
+	end
+	return path
+end
 
-
-function is_filename(filename)
-	if string.find(filename,"..",1,true) ~= nil then
+function is_filename_in_sandbox(filename, sandbox)
+	if not sandbox then
+		dronetest.log("is_filename_in_sandbox("..dump(filename)..", "..dump(sandbox)..") == true")
+		return true
+	end
+	local path, base= parse_filename(filename), parse_filename(sandbox)
+	if not path or not base then
+		dronetest.log("is_filename_in_sandbox("..dump(filename)..", "..dump(sandbox)..") == false")
 		return false
 	end
+	for i,v in ipairs(base) do
+		if path[i] ~= v then
+			dronetest.log("is_filename_in_sandbox("..dump(filename)..", "..dump(sandbox)..") == false")
+			return false
+		end
+	end
+	dronetest.log("is_filename_in_sandbox("..dump(filename)..", "..dump(sandbox)..") == true")
 	return true
 end
-function readFile(file)
-	if not is_filename(file) then
-		return ""
+function readFile(file, sandbox)
+	if not is_filename_in_sandbox(file, sandbox) then
+		dronetest.log("readFile: "..dump(file).." is not a legal filename.")
+		return
 	end
 	local f = io.open(file, "rb")
 	if not f then
-		return ""
+		dronetest.log("readFile: failed to open "..dump(file))
+		return
 	end
 	local content = f:read("*all")
 	f:close()
@@ -43,8 +72,9 @@ function readFile(file)
 end
 
 function writeFile(file,str)
-	if not is_filename(file) then
-		return false
+	if not is_filename_in_sandbox(file, sandbox) then
+		dronetest.log("writeFile: "..dump(file).." is not a legal filename.")
+		return
 	end
 	local f,err = io.open(file,"wb") 
 	if not f then minetest.log("error",err) return false end
@@ -86,7 +116,19 @@ local function count(t)
 	end
 	return n
 end
-function table.copy(t, deep, seen)
+
+local function sandbox(x, env)
+	if type(x) == "table" then
+		for k,v in pairs(x) do
+			x[k] = sandbox(v, env)
+		end
+	elseif type(x) == "function" then
+		return setfenv(function(...) return x(...) end, env)
+	else
+		return x
+	end
+end
+function table.copy(t, deep, safeenv, seen)
     seen = seen or {}
     if t == nil then return nil end
     if seen[t] then return seen[t] end
@@ -94,12 +136,14 @@ function table.copy(t, deep, seen)
     local nt = {}
     for k, v in pairs(t) do
         if deep and type(v) == 'table' then
-            nt[k] = table.copy(v, deep, seen)
+            nt[k] = table.copy(v, deep, safeenv, seen)
+        elseif safeenv and type(v) == 'function' then
+        	nt[k] = setfenv(function(...) return v(...) end, safeenv)
         else
             nt[k] = v
         end
     end
-    setmetatable(nt, table.copy(getmetatable(t), deep, seen))
+    setmetatable(nt, table.copy(getmetatable(t), deep, safeenv, seen))
     seen[t] = nt
     return nt
 end
@@ -421,12 +465,11 @@ function sys:getUniqueId(event)
 	return minetest.get_gametime().."_"..self.id.."_"..self.last_msg_id
 end
 
-
-
 -- Gets an API as a string, used only wrapped in bootstrap.lua
 -- TODO: is it possible to overload this from userspace? make sure it isn't
-local function getApi(name)
-	local api = readFile(mod_dir.."/rom/apis/"..name..".lua")
+--  electrodude's comment: who cares if it is?  If they overload it, they just can't load APIs anymore.  Their loss.
+local function getApi(name, sandbox)
+	local api = readFile(mod_dir.."/rom/apis/"..name..".lua", sandbox)
 	local err = ""
 	if type(api) ~= "string" or api == "" then minetest.log("error","missing, unreadable or empty api '"..name.."'!") error("missing, unreadable or empty api '"..name.."'!") return false end
 	api,err = loadstring(api)
@@ -435,10 +478,11 @@ local function getApi(name)
 end
 --local function 
 sys.loadApi = function(name)
-	local api = getApi(name)
+	local api = getApi(name, sys.sandbox)
 	local env_save = table.copy(userspace_environment)
 	local env_global = getfenv(api)
 	
+	-- No! Use a metatable __index instead!
 	for k,v in pairs(env_global) do 
 		if env_save[k] == nil then env_save[k] = v end 
 	--	print("API ENV for '"..name.."': "..k..": "..type(v))
@@ -454,6 +498,17 @@ end
 
 -- Userspace Environment, this is available from inside systems
 -- TODO: do we need to copy all the tables so they wont be changed for everybody by one user?
+
+local fenv_whitelist = setmetatable({}, {__mode="k"})
+local function whitelist_fenv(f)
+	fenv_whitelist[f] = true
+end
+
+local metatable_whitelist = setmetatable({}, {__mode="k"})
+local function whitelist_metatable(t)
+	metatable_whitelist[t] = true
+end
+
 userspace_environment = {ipairs=ipairs,pairs=pairs,print=print}
 userspace_environment.mod_name = mod_name
 userspace_environment.mod_dir = mod_dir
@@ -465,8 +520,32 @@ userspace_environment.table = table
 userspace_environment.string = string
 userspace_environment.math = math
 
-userspace_environment.getfenv = getfenv
-userspace_environment.setfenv = setfenv
+-- sandboxed stuff can only getfenv things it setfenv'ed
+function userspace_environment.getfenv(f)
+	-- currently disabled with 'false and' because untested
+	if false and not fenv_whitelist[f] then return nil end
+	return getfenv(f)
+end
+
+-- this probably doesn't need to be sandboxed - if a system ruins one of its fenvs, that's its own loss
+function userspace_environment.setfenv(f, env)
+	fenv_whitelist[f] = true
+	return setfenv(f, env)
+end
+
+-- sandboxed stuff can only getmetatable things it setmetatable'ed
+function userspace_environment.getmetatable(t, mt)
+	-- currently disabled with 'false and' because untested
+	if false and not metatable_whitelist[t] then return nil end
+	return getmetatable(t, mt)
+end
+
+-- this probably doesn't need to be sandboxed - if a system ruins one of its metatables, that's its own loss
+function userspace_environment.setmetatable(t, mt)
+	metatable_whitelist[t] = true
+	return setmetatable(t, mt)
+end
+
 --userspace_environment.loadfile = loadfile
 userspace_environment.pcall = pcall
 userspace_environment.xpcall = xpcall
@@ -497,6 +576,8 @@ end
 
 userspace_environment.loadstring = function(s)
 	local f,err = loadstring(s)
+	-- this is a userspace function - userspace functions can read its environment without reading it first
+	fenv_whitelist[f] = true
 	if f == nil then
 		print(err)
 		return nil,err
@@ -520,7 +601,10 @@ local function activate_by_id(id,t,pos)
 	env.getId = function() return id end
 	
 	env.sys = table.copy(sys)
+	-- HORRIBLE PLACE TO PUT ID
 	env.sys.id = 1+id-1
+	-- HORRIBLE PLACE TO PUT SANDBOX PATH
+	env.sys.sandbox = env.mod_dir.."/"..id
 	local meta = minetest.get_meta(pos)
 	env.sys.channel = meta:get_string("channel")
 	env.sys.type = t
