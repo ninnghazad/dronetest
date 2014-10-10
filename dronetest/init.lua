@@ -899,6 +899,7 @@ function drone_suck(drone,target,inv)
 		for ii,i in pairs(l) do
 			if i:get_count() > 0 then
 				item = i:take_item()
+				ninv:set_stack(il,ii,i)
 			end
 			if item ~= nil then
 				break
