@@ -330,18 +330,18 @@ local function get_drone_formspec(id,channel)
 end
 local function get_computer_formspec(id,channel)
 	local formspec =
-		"size[13,9]"..
+		"size[12,1]"..
 		default.gui_bg..
 		default.gui_bg_img..
 		default.gui_slots..
-		"textarea[0.3,0.0;13,9.7;output;;"..history_list(id).."]"..
-		"field[0.3,8.7;7,1;input;;]"..
-		"field[7.3,8.7;2,1;channel;channel;"..channel.."]"..
-		"button[9,8.4;1,1;execute;EXE]"..
-		"button[10,8.4;1,1;poweroff;OFF]"..
-		"button[11,8.4;1,1;poweron;ON]"..
+		--"textarea[0.3,0.0;13,9.7;output;;"..history_list(id).."]"..
+		"field[0.3,0.7;7,1;input;;]"..
+		"field[7.3,0.7;2,1;channel;channel;"..channel.."]"..
+		"button[9,0.4;1,1;execute;EXE]"..
+		"button[10,0.4;1,1;poweroff;OFF]"..
+		"button[11,0.4;1,1;poweron;ON]"
 		--"button[13,7.6;1,1;clear;CLR]"..
-		"button[12,8.4;1,1;redraw;DRW]"
+		--"button[12,0.4;1,1;redraw;DRW]"
 	return formspec
 end
 
@@ -824,7 +824,7 @@ local function drone_check_target(pos)
 	end
 	--print(dump(minetest.env))
 	local objs = minetest.get_objects_inside_radius(pos, 0.5)
-	print(dump(objs))
+	--print(dump(objs))
 	--return true
 	---[[
 	for i,o in ipairs(objs) do
@@ -872,6 +872,96 @@ function drone_move_to_pos(drone,target)
 	end
 	return true
 end
+function drone_suck(drone,target,inv)
+	-- TODO: enable sucking items out of other drones too
+	-- search detached inventories for that? target if drone first
+	local drops = minetest.get_objects_inside_radius(target,0.5)
+	if #drops > 0 then
+		for i,item in ipairs(drops) do
+			print("flooritem: "..i.." "..item:get_luaentity().name.." "..dump(item))
+		end
+	end
+	
+	-- this is for chests and the like
+	local ninv = minetest.get_inventory({type="node",pos=target})
+	if ninv == nil then
+		print("No inventory in that spot to suck from!")
+		return false
+	end
+	
+	local lists = ninv:get_lists()
+	local item = nil
+	
+	if inv ~= nil then
+		if lists[inv] ~= nil then 
+			lists = {inv=lists[inv]} 
+		else
+			print("No such list in that inventory!")
+			return false
+		end
+	end
+	-- Just take the first item in the list, if any
+	for il,l in pairs(lists) do
+		for ii,i in pairs(l) do
+			if i:get_count() > 0 then
+				item = i:take_item()
+				ninv:set_stack(il,ii,i)
+			end
+			if item ~= nil then
+				break
+			end
+		end
+		if item ~= nil then
+			break
+		end
+	end
+	
+	if item ~= nil then
+		--print("GOT "..item:get_name())
+		local oinv = minetest.get_inventory({type="detached",name="dronetest_drone_"..drone.id})
+		oinv:add_item("main",item)
+		return true,item:get_name()
+	end
+	return false
+end
+function drone_get_forward(drone)
+	local pos = drone.object:getpos()
+	local yaw = drone.object:getyaw()
+	local dir = yaw2dir(snapRotation(yaw))
+	if dir == 0 then dir = 2 
+	elseif dir == 2 then dir = 0 end
+	local target = minetest.facedir_to_dir(dir)
+	target.x = pos.x - target.x 
+	target.y = pos.y - target.y 
+	target.z = pos.z - target.z 
+	return target
+end
+function drone_get_back(drone)
+	local pos = drone.object:getpos()
+	local yaw = drone.object:getyaw()
+	local dir = yaw2dir(snapRotation(yaw))
+	dir = dir + 2
+	if dir > 3 then dir = dir - 4 end
+	if dir == 0 then dir = 2 
+	elseif dir == 2 then dir = 0 end
+	local target = minetest.facedir_to_dir(dir)
+	target.x = pos.x - target.x 
+	target.y = pos.y - target.y 
+	target.z = pos.z - target.z 
+	return target
+end
+function drone_get_up(drone)
+	local pos = drone.object:getpos()
+	local target = table.copy(pos)
+	target.y = target.y + 1
+	return target
+end
+function drone_get_down(drone)
+	local pos = drone.object:getpos()
+	local target = table.copy(pos)
+	target.y = target.y - 1
+	return target
+end
 -- the drone's actions are different in that they all take the drone's id as first parameter, and a print-callback as the second.
 dronetest.drone_actions = {
 	test = {desc="a test",func=function(id,print) print("TEST") end},
@@ -903,49 +993,111 @@ dronetest.drone_actions = {
 	up = {desc="Moves the drone up.",
 		func = function(id,print)
 			local d = dronetest.drones[id]
-			local pos = d.object:getpos()
-			local target = table.copy(pos)
-			target.y = target.y + 1
+			local target = drone_get_up(d)
 			return drone_move_to_pos(d,target)
 		end},
 	down = {desc="Moves the drone down.",
 		func = function(id,print)
 			local d = dronetest.drones[id]
-			local pos = d.object:getpos()
-			local target = table.copy(pos)
-			target.y = target.y - 1
+			local target = drone_get_down(d)
 			return drone_move_to_pos(d,target)
 		end},
 	forward = {desc="Moves the drone forward.",
 		func = function(id,print)
 			local d = dronetest.drones[id]
-			local pos = d.object:getpos()
-			local yaw = d.object:getyaw()
-			local dir = yaw2dir(snapRotation(yaw))
-			if dir == 0 then dir = 2 
-			elseif dir == 2 then dir = 0 end
-			local target = minetest.facedir_to_dir(dir)
-			target.x = pos.x + target.x 
-			target.y = pos.y + target.y 
-			target.z = pos.z + target.z 
+			local target = drone_get_forward(d)
 			return drone_move_to_pos(d,target)
 		end},
 	back = {desc="Moves the drone back.",
 		func = function(id,print)
 			local d = dronetest.drones[id]
-			local pos = d.object:getpos()
-			local yaw = d.object:getyaw()
-			local dir = yaw2dir(snapRotation(yaw))
-			dir = dir + 2
-			if dir > 3 then dir = dir - 4 end
-			if dir == 0 then dir = 2 
-			elseif dir == 2 then dir = 0 end
-			local target = minetest.facedir_to_dir(dir)
-			target.x = pos.x + target.x 
-			target.y = pos.y + target.y 
-			target.z = pos.z + target.z 
+			local target = drone_get_back(d)
 			return drone_move_to_pos(d,target)
 		end},
+	suck = {desc="Sucks an item out of an inventory in front of the drone.",
+		func = function(id,print,inv)
+			local d = dronetest.drones[id]
+			local target = drone_get_forward(d)
+			return drone_suck(d,target,inv)
+		end},
+	suckUp = {desc="Sucks an item out of an inventory above the drone.",
+		func = function(id,print,inv)
+			local d = dronetest.drones[id]
+			local target = drone_get_up(d)
+			return drone_suck(d,target,inv)
+		end},
+	suckDown = {desc="Sucks an item out of an inventory below the drone.",
+		func = function(id,print,inv)
+			local d = dronetest.drones[id]
+			local target = drone_get_down(d)
+			return drone_suck(d,target,inv)
+		end},
+	place = {desc="Places stuff from inventory in front of drone.",func=function() end},
+	placeUp = {desc="Places stuff from inventory above drone.",func=function() end},
+	placeDown = {desc="Places stuff from inventory below drone.",func=function() end},
+	drop = {desc="Places stuff from inventory in front of drone.",func=function() end},
+	dropUp = {desc="Places stuff from inventory above drone.",func=function() end},
+	dropDown = {desc="Places stuff from inventory below drone.",func=function() end},
+	detect = {desc="Places stuff from inventory in front of drone.",func=function() end},
+	detectUp = {desc="Places stuff from inventory in front of drone.",func=function() end},
+	detectDown = {desc="Places stuff from inventory in front of drone.",func=function() end},
+	dig = {desc="Digs in front of drone.",func=function(id,print) 
+		local d = dronetest.drones[id]
+		local target = drone_get_forward(d)
+		local node = minetest.get_node(target)
+		if node.name == "air" then
+			return false
+		end
+		local def = ItemStack({name=node.name}):get_definition()
+		
+		if not def.diggable then
+			print("That is not diggable.")
+			return false
+		end
+		-- if we cannot dig something, we try to suck items out of it - maybe its a chest.
+		-- cause currently only empty chests may be digged. not sure if it's the right way
+		-- to just do this automatically, probably not.
+		if def.can_dig and not def.can_dig(target,d) then
+			while dronetest.drone_actions.suck.func(id,target) do
+				-- print("Target could be container, trying to clear it before digging it.")
+				-- take all items from container?!
+			end
+			if not def.can_dig(target,d) then
+				print("Object seems to be undiggable!")
+				return false
+			end
+		end
+		
+		minetest.dig_node(target)
+		
+		local function rand_pos(pos, radius)
+			local target = pos
+			target.x = target.x + math.random(-radius*100, radius*100)/100
+			target.z = target.z + math.random(-radius*100, radius*100)/100
+			return target
+		end
+		-- TODO: 
+		local itemstacks = minetest.get_node_drops(node.name)
+		local oinv = minetest.get_inventory({type="detached",name="dronetest_drone_"..id})
+		for _, itemname in ipairs(itemstacks) do
+			local stack = ItemStack(itemname)
+			print("dropping "..stack:get_count().."x "..itemname.." "..dump(itemname))
+			local item = minetest.add_item(rand_pos(target,.49), stack)
+			
+			if item ~= nil then
+				item:get_luaentity().collect = true
+				oinv:add_item("main",ItemStack(item:get_luaentity().itemstring))
+				item:get_luaentity().itemstring = ""
+				item:remove()
+			end
+		end
+		
+		
+		return true
+	end},
+	digUp = {desc="Places stuff from inventory above drone.",func=function() end},
+	digDown = {desc="Places stuff from inventory below drone.",func=function() end},
+	
 }
 
 -- drones receive digiline messages only through transceivers, when responding to those messages,
