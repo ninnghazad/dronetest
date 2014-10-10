@@ -39,21 +39,21 @@ end
 
 function is_filename_in_sandbox(filename, sandbox)
 	if not sandbox then
-		dronetest.log("is_filename_in_sandbox("..dump(filename)..", "..dump(sandbox)..") == true")
+		--dronetest.log("is_filename_in_sandbox("..dump(filename)..", "..dump(sandbox)..") == true")
 		return true
 	end
 	local path, base= parse_filename(filename), parse_filename(sandbox)
 	if not path or not base then
-		dronetest.log("is_filename_in_sandbox("..dump(filename)..", "..dump(sandbox)..") == false")
+		--dronetest.log("is_filename_in_sandbox("..dump(filename)..", "..dump(sandbox)..") == false")
 		return false
 	end
 	for i,v in ipairs(base) do
 		if path[i] ~= v then
-			dronetest.log("is_filename_in_sandbox("..dump(filename)..", "..dump(sandbox)..") == false")
+			--dronetest.log("is_filename_in_sandbox("..dump(filename)..", "..dump(sandbox)..") == false")
 			return false
 		end
 	end
-	dronetest.log("is_filename_in_sandbox("..dump(filename)..", "..dump(sandbox)..") == true")
+	--dronetest.log("is_filename_in_sandbox("..dump(filename)..", "..dump(sandbox)..") == true")
 	return true
 end
 function readFile(file, sandbox)
