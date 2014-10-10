@@ -1,0 +1,11 @@
+print("testing drone inventory stuff")
+local drone = peripheral.wrap("dronetest:drone:100")
+drone.back()
+os.sleep(2)
+drone.forward()
+local r,i = drone.suck()
+print("drone has taken 1 '"..i.."' from target.")
+drone.back()
+os.sleep(2)
+drone.forward()
+return true

@@ -49,7 +49,7 @@ function peripheral.wrap(channel)
 			end
 			print("COMPUTER peripheral answered")
 			
-			return e.msg
+			return unpack(e.msg)
 		end
 		
 	end
