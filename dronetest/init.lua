@@ -875,7 +875,13 @@ end
 function drone_suck(drone,target,inv)
 	-- TODO: enable sucking items out of other drones too
 	-- search detached inventories for that? target if drone first
-	print("drone will try to suck from "..dump(target).." ("..dump(drone.object:getpos())..")")
+	local drops = minetest.get_objects_inside_radius(target,0.5)
+	if #drops > 0 then
+		for i,item in ipairs(drops) do
+			print("flooritem: "..i.." "..item:get_luaentity().name.." "..dump(item))
+		end
+	end
+	
 	-- this is for chests and the like
 	local ninv = minetest.get_inventory({type="node",pos=target})
 	if ninv == nil then
@@ -1035,6 +1041,62 @@ dronetest.drone_actions = {
 	detect = {desc="Places stuff from inventory in front of drone.",func=function() end},
 	detectUp = {desc="Places stuff from inventory in front of drone.",func=function() end},
 	detectDown = {desc="Places stuff from inventory in front of drone.",func=function() end},
+	dig = {desc="Digs in front of drone.",func=function(id,print) 
+		local d = dronetest.drones[id]
+		local target = drone_get_forward(d)
+		local node = minetest.get_node(target)
+		if node.name == "air" then
+			return false
+		end
+		local def = ItemStack({name=node.name}):get_definition()
+		
+		if not def.diggable then
+			print("That is not diggable.")
+			return false
+		end
+		-- if we cannot dig something, we try to suck items out of it - maybe its a chest.
+		-- cause currently only empty chests may be digged. not sure if it's the right way
+		-- to just do this automatically, probably not.
+		if def.can_dig and not def.can_dig(target,d) then
+			while dronetest.drone_actions.suck.func(id,target) do
+				-- print("Target could be container, trying to clear it before digging it.")
+				-- take all items from container?!
+			end
+			if not def.can_dig(target,d) then
+				print("Object seems to be undiggable!")
+				return false
+			end
+		end
+		
+		minetest.dig_node(target)
+		
+		local function rand_pos(pos, radius)
+			local target = pos
+			target.x = target.x + math.random(-radius*100, radius*100)/100
+			target.z = target.z + math.random(-radius*100, radius*100)/100
+			return target
+		end
+		-- TODO: 
+		local itemstacks = minetest.get_node_drops(node.name)
+		local oinv = minetest.get_inventory({type="detached",name="dronetest_drone_"..id})
+		for _, itemname in ipairs(itemstacks) do
+			local stack = ItemStack(itemname)
+			print("dropping "..stack:get_count().."x "..itemname.." "..dump(itemname))
+			local item = minetest.add_item(rand_pos(target,.49), stack)
+			
+			if item ~= nil then
+				item:get_luaentity().collect = true
+				oinv:add_item("main",ItemStack(item:get_luaentity().itemstring))
+				item:get_luaentity().itemstring = ""
+				item:remove()
+			end
+		end
+		
+		
+		return true
+	end},
+	digUp = {desc="Places stuff from inventory above drone.",func=function() end},
+	digDown = {desc="Places stuff from inventory below drone.",func=function() end},
 	
 }
 
