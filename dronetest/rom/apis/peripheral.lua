@@ -29,7 +29,7 @@ function peripheral.wrap(channel,timeout)
 		newp[name] = function(a,b,c,d,e)
 			local pos = dronetest.active_systems[sys.id].pos
 			local msg_id = sys:getUniqueId() 
-			
+		--	dronetest.log("action: "..name.." @ "..channel)
 			-- send action -- we attach a print() function, so the peripheral, when called from a computer, can print to its screen
 			digiline:receptor_send(pos, digiline.rules.default,channel, {action=name,argv={a,b,c,d,e},msg_id=msg_id,print=function(msg) print(msg) end})
 

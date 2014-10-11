@@ -41,17 +41,22 @@ dronetest.events.send_all = function(event)
 	return count
 end
 dronetest.events.wait_for_receive = function(id,filter,channel,msg_id,timeout)
-	print("WAIT FOR DIGILINE 2")
+	--print("WAIT FOR DIGILINE #"..id)
 	if dronetest.active_systems[id] == nil then
+		dronetest.log("BUG: dronetest.events.wait_for_receive on inactive system.")
 		return nil
 	end
+	
 	if type(filter) ~= "table" then filter = {} end
 	if type(timeout) ~= "number" or timeout <= 0 or timeout > 120 then
 		timeout = 4 -- default timeout
 	end
 	local event = nil
 	local result = dronetest.events.receive(id,filter,channel,msg_id)
-	if result ~= nil then return result end
+	if result ~= nil then 
+		--print("nowait: "..dump(result))
+		return result 
+	end
 	
 	local function callback(event) 
 		if (msg_id == nil or (type(e.msg)=="table" and type(e.msg.msg_id) == "string" and e.msg.msg_id ~= msg_id)) then
@@ -60,7 +65,7 @@ dronetest.events.wait_for_receive = function(id,filter,channel,msg_id,timeout)
 		end
 		return 
 	end
-	print("#$#######################################################################################")
+	--print("#$#######################################################################################")
 	if type(dronetest.events.callbacks[id]) ~= "table" then dronetest.events.callbacks[id] = {} end
 	if type(dronetest.events.callbacks[id][filter]) ~= "table" then dronetest.events.callbacks[id][filter]= {} end
 	dronetest.events.callbacks[id][filter][msg_id] = callback
@@ -72,7 +77,7 @@ dronetest.events.wait_for_receive = function(id,filter,channel,msg_id,timeout)
 		s = s * 2
 		if s > timeout / 10 then s = 0.05 end
 	end
-	print("finished waiting: "..dump(result))
+	--print("finished waiting: "..dump(result))
 	dronetest.events.callbacks[id][filter][msg_id] = nil
 	if dronetest.count(dronetest.events.callbacks[id][filter]) <= 0 then dronetest.events.callbacks[id][filter] = nil end
 	if dronetest.count(dronetest.events.callbacks[id]) <= 0 then dronetest.events.callbacks[id] = nil end

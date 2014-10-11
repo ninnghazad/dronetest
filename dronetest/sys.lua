@@ -7,6 +7,7 @@ dronetest.sys.yield = coroutine.yield
 dronetest.sys.getTime = function()
 	return minetest.get_gametime()
 end
+dronetest.sys.time = dronetest.sys.getTime 
 function dronetest.sys:receiveEvent(filter)
 	if filter == nil then
 		filter = {}
@@ -23,7 +24,6 @@ function dronetest.sys:receiveDigilineMessage(channel,msg_id)
 end
 
 function dronetest.sys:waitForDigilineMessage(channel,msg_id,timeout)
-	print("WAIT!")
 	local e = dronetest.events.wait_for_receive(self.id,{"digiline"},channel,msg_id,timeout)
 	if e == nil then return nil end
 	return e.msg
