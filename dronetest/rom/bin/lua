@@ -1,0 +1,54 @@
+local env = setmetatable({}, {__index = _G})
+
+function env.quit()
+
+end
+
+local function processInput(msg)
+	if msg == nil or type(msg) ~= "string" then return false end
+	
+	local func, err = loadstring(msg)
+	if type(func) ~= "function" then
+		func, err = loadstring("return "..msg)
+		if type(func) ~= "function" then
+			print("ERROR: "..err)
+			return
+		end
+	end
+
+	setfenv(func, env)
+
+	local result = {pcall(func)}
+
+	local ok = result[1]
+	table.remove(result, 1)
+
+	if not ok then
+		print("ERROR: "..result[1])
+		return
+	end
+
+	for i,v in ipairs(result) do
+		print(tostring(v))
+	end
+
+	return result
+end
+
+local event = nil
+while true do
+	event = sys:receiveEvent({"input"})
+	if event ~= nil then
+		if event.type == "input" then
+		--	print(sys.id.." received input: "..dump(event.msg))
+			if type(event.msg) ~= "string" or event.msg == "" then
+				print("$")
+			elseif not processInput(event.msg) then 
+				print("Command '"..event.msg.."' failed.")
+			end
+		else
+			print(sys.id.." received unhandled event: "..dump(event))
+		end
+	end
+	sys.yield()
+end
