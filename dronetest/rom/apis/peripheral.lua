@@ -30,19 +30,16 @@ function peripheral.wrap(channel,timeout)
 			local pos = dronetest.active_systems[sys.id].pos
 			local msg_id = sys:getUniqueId() 
 			
-			
---			print("COMPUTER calling peripheral on channel "..channel.." to execute "..name)
-			
 			-- send action -- we attach a print() function, so the peripheral, when called from a computer, can print to its screen
 			digiline:receptor_send(pos, digiline.rules.default,channel, {action=name,argv={a,b,c,d,e},msg_id=msg_id,print=function(msg) print(msg) end})
---			print("COMPUTER waiting for peripheral to answer")
+
 			-- receive answer, see above
-			local e = sys:receiveDigilineMessage(channel,msg_id)
-			while e == nil do
-				sleep(0.05)
-				e = sys:receiveDigilineMessage(channel,msg_id)
+			e = sys:waitForDigilineMessage(channel,msg_id,timeout)
+			if e == nil then
+				print("system "..sys.id.." could not reach peripheral on channel '"..channel.."' for action '"..name.."'.")
+				return nil
 			end
---			print("COMPUTER peripheral answered")
+			
 			
 			return unpack(e.msg)
 		end
