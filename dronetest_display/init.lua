@@ -22,11 +22,11 @@ local displays = {
 	--* [0] = {delta = {x = 0, y = 0.4, z = 0}, pitch = math.pi / -2},
 	-- on ground
 	--* [1] = {delta = {x = 0, y =-0.4, z = 0}, pitch = math.pi /  2},
-	-- sides
-	[2] = {delta = {x =  0.4, y = 0, z = 0}, yaw = math.pi / -2},
-	[3] = {delta = {x = -0.4, y = 0, z = 0}, yaw = math.pi /  2},
-	[4] = {delta = {x = 0, y = 0, z =  0.4}, yaw = 0},
-	[5] = {delta = {x = 0, y = 0, z = -0.4}, yaw = math.pi},
+	-- sides 7/16?
+	[2] = {delta = {x =  0.4374, y = 0, z = 0}, yaw = math.pi / -2},
+	[3] = {delta = {x = -0.4374, y = 0, z = 0}, yaw = math.pi /  2},
+	[4] = {delta = {x = 0, y = 0, z =  0.4374}, yaw = 0},
+	[5] = {delta = {x = 0, y = 0, z = -0.4374}, yaw = math.pi},
 }
 local clearscreen = function(pos)
 	local objects = minetest.get_objects_inside_radius(pos, 0.5)
