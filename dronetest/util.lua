@@ -117,3 +117,4 @@ function sleep(seconds)
 		coroutine.yield()
 	end
 end
+dronetest.sleep = sleep

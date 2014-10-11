@@ -366,8 +366,6 @@ function drone.on_digiline_receive_line(self, channel, msg, senderPos)
 			for n,v in pairs(dronetest.drone_actions) do
 				cap[n] = v.desc
 			end
-	--		print("DRONE "..self.id.." responds channel: "..channel.." action: "..msg.action)
-			-- act as if transceiver would send the message
 			
 			-- send capabilities -- act as if transceiver would send the message
 			digiline:receptor_send(senderPos, digiline.rules.default,channel, {action = "CAPABILITIES",msg_id = msg.msg_id,msg = cap })

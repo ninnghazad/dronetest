@@ -4,6 +4,7 @@ local channel = "dronetest:drone:1"
 
 local function shakeit(channel)
 	local drone = peripheral.wrap(channel)
+	if drone == nil then return end
 	print("DRONE "..channel.." GETTING DOWN NOW!")
 	local r
 	while true do
@@ -40,12 +41,15 @@ end
 -- lets try to have 2 drones shakin' it at once!
 function f1() shakeit("dronetest:drone:4") end
 function f2() shakeit("dronetest:drone:2") end
+function f3() shakeit("dronetest:drone:1") end
 
 local c1 = coroutine.create(f1)
 local c2 = coroutine.create(f2)
-while coroutine.status(c1) == "suspended" and coroutine.status(c2) == "suspended" do
+local c3 = coroutine.create(f3)
+while coroutine.status(c1) == "suspended" and coroutine.status(c2) == "suspended" and coroutine.status(c3) == "suspended" do
 	coroutine.resume(c1)
 	coroutine.resume(c2)
+	coroutine.resume(c3)
 end
 	
 	

@@ -19,7 +19,13 @@ end
 function dronetest.sys:receiveDigilineMessage(channel,msg_id)
 	local e = dronetest.events.receive(self.id,{"digiline"},channel,msg_id)
 	if e == nil then return nil end
-	print("COMPUTER #"..dump(self.id).." received digilines event on channel: "..channel.." "..dump(e))
+	return e.msg
+end
+
+function dronetest.sys:waitForDigilineMessage(channel,msg_id,timeout)
+	print("WAIT!")
+	local e = dronetest.events.wait_for_receive(self.id,{"digiline"},channel,msg_id,timeout)
+	if e == nil then return nil end
 	return e.msg
 end
 
