@@ -38,8 +38,8 @@ end
 --shakeit("dronetest:drone:1")
 
 -- lets try to have 2 drones shakin' it at once!
-function f1() shakeit("dronetest:drone:5") end
-function f2() shakeit("dronetest:drone:6") end
+function f1() shakeit("dronetest:drone:1") end
+function f2() shakeit("dronetest:drone:2") end
 
 local c1 = coroutine.create(f1)
 local c2 = coroutine.create(f2)

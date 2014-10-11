@@ -3,7 +3,7 @@
 local peripheral = {}
 
 function peripheral.wrap(channel)
-	local pos = active_systems[sys.id].pos
+	local pos = dronetest.active_systems[sys.id].pos
 	-- use a unique message-id so we are able to identify the response to our request easily.
 	local msg_id = sys:getUniqueId()
 	-- this should be wrapped in sys:sendDigilineMessage
@@ -32,7 +32,7 @@ function peripheral.wrap(channel)
 	for name,desc in pairs(e.msg) do
 		print("wrap peripheral's method "..name..": "..desc)
 		newp[name] = function(a,b,c,d,e)
-			local pos = active_systems[sys.id].pos
+			local pos = dronetest.active_systems[sys.id].pos
 			local msg_id = sys:getUniqueId() 
 			
 			
