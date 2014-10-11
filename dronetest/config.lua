@@ -1,11 +1,4 @@
 
---Config documentation, items that have one get save in config and can be changed by menu
-local doc = {
-	last_id = "The last id given to a computer.",
-	last_drone_id = "The last id given to a drone.",
-	globalstep_interval = "Interval to run LUA-coroutines at.",
-	max_userspace_instructions = "How many instructions may a player execute on a system without yielding?"
-}
 
 --Manage config.
 --Saves contents of config to file.
@@ -49,6 +42,7 @@ local function loadConfig(path)
 	end
 end
 
+
 dronetest.save = function ()
 	saveConfig(dronetest.mod_dir.."/config.txt", dronetest, doc)
 end
@@ -63,7 +57,7 @@ if dronetest.config then
 		end
 	end
 else
-	save()
+	dronetest.save()
 end
 
 for i,v in pairs(dronetest) do

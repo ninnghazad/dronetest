@@ -356,7 +356,7 @@ dronetest.drone_actions = {
 -- but act like transceivers to the player.
 function drone.on_digiline_receive_line(self, channel, msg, senderPos)
 	if type(msg) ~= "table" or type(msg.action) ~= "string" then return end
-	print("DRONE "..self.id.." received digiline channel: "..channel.." action: "..msg.action)
+--	print("DRONE "..self.id.." received digiline channel: "..channel.." action: "..msg.action)
 	if channel ~= self.channel then return end
 	
 	if type(msg) == "table" and type(msg.action) == "string" then
@@ -366,7 +366,7 @@ function drone.on_digiline_receive_line(self, channel, msg, senderPos)
 			for n,v in pairs(dronetest.drone_actions) do
 				cap[n] = v.desc
 			end
-			print("DRONE "..self.id.." responds channel: "..channel.." action: "..msg.action)
+	--		print("DRONE "..self.id.." responds channel: "..channel.." action: "..msg.action)
 			-- act as if transceiver would send the message
 			
 			-- send capabilities -- act as if transceiver would send the message
@@ -375,13 +375,13 @@ function drone.on_digiline_receive_line(self, channel, msg, senderPos)
 		elseif dronetest.drone_actions[msg.action] ~= nil then
 			if msg.argv == nil or type(msg.argv) ~= "table" then msg.argv = {} end
 			if dronetest.drones[self.id] == nil then print("drone #"..self.id.." not reachable!") return end
-			print("drone #"..self.id.." will execute "..msg.action.." from "..channel..".")
+--			print("drone #"..self.id.." will execute "..msg.action.." from "..channel..".")
 		--	print("PRE: "..dump(dronetest.drones[self.id]).." "..type(self.id))
 			-- execute function
 			local response = {dronetest.drone_actions[msg.action].func(self.id,msg.print,msg.argv[1],msg.argv[2],msg.argv[3],msg.argv[4],msg.argv[5])}
 			--local response = {true}
-			print("drone #"..self.id.." finished action '"..msg.action.."': "..dump(response))
-			print("drone #"..self.id.." will answer on "..channel..".")
+--			print("drone #"..self.id.." finished action '"..msg.action.."': "..dump(response))
+--			print("drone #"..self.id.." will answer on "..channel..".")
 			
 			-- send response -- act as if transceiver would send the message
 			digiline:receptor_send(senderPos, digiline.rules.default,channel, {action = msg.action ,msg_id = msg.msg_id,msg = response })

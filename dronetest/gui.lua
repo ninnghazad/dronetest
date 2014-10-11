@@ -1,22 +1,23 @@
 
-local get_menu_formspec = function()
+dronetest.get_menu_formspec = function()
 	local p = -0.5
 	local formspec = "label[0,-0.3;Settings:]"
 	for i,v in pairs(dronetest) do
 		local t = type(v)
+		if dronetest.doc[i] ~= nil then
 		if t == "string" or t == "number" then
 			p = p + 1.5
-			formspec = formspec.."field[0.3,"..p..";4,1;dronetest:"..i..";"..i.." ("..doc[i]..")"..";"..v.."]"
+			formspec = formspec.."field[0.3,"..p..";4,1;dronetest:"..i..";"..i.." ("..dronetest.doc[i]..")"..";"..v.."]"
 		elseif t == "boolean" then
 			p = p + 0.5
-			formspec = formspec.."checkbox[0,"..p..";dronetest:"..i..";"..i.." ("..doc[i]..")"..";"..tostring(v).."]"
+			formspec = formspec.."checkbox[0,"..p..";dronetest:"..i..";"..i.." ("..dronetest.doc[i]..")"..";"..tostring(v).."]"
+		end
 		end
 	end
 	p = p + 1
 	formspec = "size[4,"..p..";]\n"..formspec
 	return formspec
 end
-
 minetest.register_on_player_receive_fields(function(player, formname, fields)
 	dronetest.log("minetest.register_on_player_receive_fields received '"..formname.."'")
 	local key = {formname:match("([^:]+):([^:]+):([^:]+)")}
@@ -52,7 +53,7 @@ minetest.register_on_player_receive_fields(function(player, formname, fields)
 				end	
 			end
 		end
-		save()
+		dronetest.save()
 	end
 	return false
 end)

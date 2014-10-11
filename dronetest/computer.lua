@@ -182,7 +182,7 @@ minetest.register_node("dronetest:computer", {
 				--local setchan = meta:get_string("channel")
 				--if setchan ~= channel then return end
 				local id = meta:get_int("id")
-				print("COMPUTER "..id.." received on "..channel.." "..dump(msg))
+			--	print("COMPUTER "..id.." received on "..channel.." "..dump(msg))
 				dronetest.events.send_by_id(id,{type="digiline",channel=channel,msg=msg})
 			end
 		},
@@ -209,7 +209,7 @@ minetest.register_node("dronetest:computer", {
 		if not minetest.forceload_block(pos) then
 			dronetest.log("WARNING: Could not forceload block at "..dump(pos)..".")
 		end
-		save() -- so we remember the changed last_id in case of crashes
+		dronetest.save() -- so we remember the changed last_id in case of crashes
 	end,
 	on_destruct = function(pos, oldnode)
 		deactivate(pos)

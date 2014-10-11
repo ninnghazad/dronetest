@@ -29,7 +29,15 @@ dronetest = {
 	mod_name = minetest.get_current_modname(),
 	mod_dir = minetest.get_modpath(minetest.get_current_modname()),
 	bootstrap = "",
+	--Config documentation, items that have one get save in config and can be changed by menu
+	doc = {
+		last_id = "The last id given to a computer.",
+		last_drone_id = "The last id given to a drone.",
+		globalstep_interval = "Interval to run LUA-coroutines at.",
+		max_userspace_instructions = "How many instructions may a player execute on a system without yielding?"
+	},
 }
+	
 -- include Lua File System, not sure if more versions are needed, this is linux64 and win32 i think
 package.cpath = package.cpath
 	.. ";" .. dronetest.mod_dir .. "/lfs.so"

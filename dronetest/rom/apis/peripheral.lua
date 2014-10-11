@@ -9,7 +9,7 @@ function peripheral.wrap(channel)
 	-- this should be wrapped in sys:sendDigilineMessage
 	digiline:receptor_send(pos, digiline.rules.default,channel, {action="GET_CAPABILITIES",msg_id=msg_id})
 	
-	print("COMPUTER "..sys.id.." waiting for CAPABILITIES on channel: "..channel)
+--	print("COMPUTER "..sys.id.." waiting for CAPABILITIES on channel: "..channel)
 	
 	-- wait for answer, this should be in a sys:function, with a timeout!
 	local e = nil
@@ -17,7 +17,7 @@ function peripheral.wrap(channel)
 		sleep(0.05)
 		e = sys:receiveDigilineMessage(channel,msg_id)
 	end
-	print("COMPUTER "..sys.id.." received CAPABILITIES on channel: "..channel)
+--	print("COMPUTER "..sys.id.." received CAPABILITIES on channel: "..channel)
 	-- check response
 	--[[
 	if type(e.action) ~= "string" or type(e.msg) ~= "table" or type(e.msg_id) ~= "string"
@@ -36,18 +36,18 @@ function peripheral.wrap(channel)
 			local msg_id = sys:getUniqueId() 
 			
 			
-			print("COMPUTER calling peripheral on channel "..channel.." to execute "..name)
+--			print("COMPUTER calling peripheral on channel "..channel.." to execute "..name)
 			
 			-- send action -- we attach a print() function, so the peripheral, when called from a computer, can print to its screen
 			digiline:receptor_send(pos, digiline.rules.default,channel, {action=name,argv={a,b,c,d,e},msg_id=msg_id,print=function(msg) print(msg) end})
-			print("COMPUTER waiting for peripheral to answer")
+--			print("COMPUTER waiting for peripheral to answer")
 			-- receive answer, see above
-			local e = nil
+			local e = sys:receiveDigilineMessage(channel,msg_id)
 			while e == nil do
 				sleep(0.05)
 				e = sys:receiveDigilineMessage(channel,msg_id)
 			end
-			print("COMPUTER peripheral answered")
+--			print("COMPUTER peripheral answered")
 			
 			return unpack(e.msg)
 		end
