@@ -9,7 +9,7 @@ end
 
 local shell = {}
 function shell.errorHandler(err,level)
-	print("ERROR @ "..err)
+	print("shell error: "..err)
 end
 function shell.run(cmd,argv)
 	local env = getfenv(2)

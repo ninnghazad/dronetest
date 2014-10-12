@@ -8,7 +8,7 @@ local function saveConfig(path, config, doc)
 		for i,v in pairs(config) do
 			
 			local t = type(v)
-			if i ~= "config" and (t == "string" or t == "number" or t == "boolean") then
+			if (t == "string" or t == "number" or t == "boolean") then
 				if doc and doc[i] then -- save only those with a description!
 					file:write("# "..doc[i].."\n")
 					file:write(i.." = "..tostring(v).."\n")
@@ -58,17 +58,4 @@ if dronetest.config then
 	end
 else
 	dronetest.save()
-end
-
-for i,v in pairs(dronetest) do
-	local t = type(v)
-	if i ~= "config" and (t == "string" or t == "number" or t == "boolean") then
-		local v = minetest.setting_get("snow_"..i)
-		if v ~= nil then
-			if v == "true" then v = true end
-			if v == "false" then v = false end
-			if tonumber(v) then v = tonumber(v) end
-			dronetest[i] = v
-		end
-	end
 end
