@@ -3,8 +3,8 @@
 local droneid = 1
 
 -- bounding box is relative to current drone position.
-local posMin = {x=-2,y=-200,z=-2}
-local posMax = {x=12,y=0,z=12}
+local posMin = {x=-25,y=-200,z=-25}
+local posMax = {x=25,y=0,z=25}
 -- table of nodenames to to pickup/dig
 local ignore = {"default:stone"}
 

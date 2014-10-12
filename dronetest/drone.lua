@@ -49,9 +49,9 @@ end
 
 
 local steps = 10
-local rad2unit = 1 / (2*3.14159265359)
+dronetest.rad2unit = 1 / (2*3.14159265359)
 dronetest.yaw2dir = function(yaw)
-	local dir = yaw * rad2unit
+	local dir = yaw * dronetest.rad2unit
 	if dir > 0.875 or dir <= 0.125 then return 0 
 	elseif dir > 0.125 and dir <= 0.375 then return 1 
 	elseif dir > 0.375 and dir <= 0.625 then return 2
@@ -59,11 +59,12 @@ dronetest.yaw2dir = function(yaw)
 end
 
 dronetest.snapRotation = function(r)
-	while r < 0 do r = r + (1/rad2unit) end
-	while r > 1/rad2unit do r = r - (1/rad2unit) end
-	r = r * rad2unit
+	if r == nil then r  = 0 end
+	while r < 0 do r = r + (1/dronetest.rad2unit) end
+	while r > 1/dronetest.rad2unit do r = r - (1/dronetest.rad2unit) end
+	r = r * dronetest.rad2unit
 	r = math.round(r * 4) / 4
-	r = r / rad2unit
+	r = r / dronetest.rad2unit
 	return r
 end
 
@@ -111,8 +112,10 @@ function drone_move_to_pos(drone,target)
 	end
 	if minetest.get_node(target).name == "ignore" then
 	while minetest.get_node(target).name == "ignore" do
-		print("waiting for block to load...")
+		print("waiting for block to load @ "..target.x..","..target.y..","..target.z)
+		minetest.forceload_block(target)
 		coroutine.yield()
+		
 	end
 	print("ok, waited")
 	end
@@ -303,7 +306,7 @@ dronetest.drone_actions = {
 	turnLeft = {desc="Rotates the drone to the left.",
 		func=function(drone,print)
 			local r = drone.object:getyaw() 
-			local rot = (0.25 / rad2unit) / steps
+			local rot = (0.25 / dronetest.rad2unit) / steps
 			r = dronetest.snapRotation(r)
 			for i=1,steps,1 do
 				r = r + rot
@@ -314,7 +317,7 @@ dronetest.drone_actions = {
 	turnRight = {desc="Rotates the drone to the right.",
 		func = function(drone,print)
 			local r = drone.object:getyaw() 
-			local rot = (-0.25 / rad2unit) / steps
+			local rot = (-0.25 / dronetest.rad2unit) / steps
 			r = dronetest.snapRotation(r)
 			for i=1,steps,1 do
 				r = r + rot
@@ -459,7 +462,7 @@ function drone.on_digiline_receive_line(self, channel, msg, senderPos)
 	end
 end
 
-local rad2unit = 1 / (2*3.14159265359)
+dronetest.rad2unit = 1 / (2*3.14159265359)
 function drone.on_activate(self, staticdata, dtime_s)
         self.object:set_armor_groups({immortal=1})
 	local pos = self.object:getpos()
@@ -476,9 +479,9 @@ function drone.on_activate(self, staticdata, dtime_s)
 			
 			-- Snap rotation, drone may have been shut down while rotating
 			local r = self.object:getyaw()
-			r = math.round(r * rad2unit * 4) / 4
+			r = math.round(r * dronetest.rad2unit * 4) / 4
 			if r > 3 then r = 0 end
-			r = r / rad2unit
+			r = r / dronetest.rad2unit
 			self.object:setyaw(r)
 			
 			print("add drone "..self.id.." to list. "..type(self.id))
