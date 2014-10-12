@@ -19,7 +19,7 @@ local startTime = sys.time()/20
 local start = 0 
 
 local pos = dronetest.drones[droneid].object:getpos()
-local startPos = position
+local startPos = table.copy(pos)
 local dir = dronetest.yaw2dir(dronetest.snapRotation(dronetest.drones[droneid].object:getyaw()))
 local startDir = dir
 posMin.x = posMin.x + pos.x
@@ -128,12 +128,12 @@ function digTo(target,pickup)
 	local counter = 0
 	while pos.x ~= target.x or pos.z ~= target.z or pos.y ~= target.y do
 		
-		if pos.y < target.y then dir = 4
-		elseif pos.y > target.y then dir = 5
-		elseif pos.z < target.z then dir = 0
+		if pos.z < target.z then dir = 0
 		elseif pos.z > target.z then dir = 2
 		elseif pos.x < target.x then dir = 1
-		else dir = 3 end
+		elseif pos.x > target.x then dir = 3 
+		elseif pos.y < target.y then dir = 4
+		elseif pos.y > target.y then dir = 5 end
 		
 		local r,t = goDir(dir)
 		if not r then
@@ -150,6 +150,14 @@ function digTo(target,pickup)
 	end
 	return true
 end
+local function unload()
+	digTo(startPos,true)
+	goDir(3)
+	while drone.dropUp() do
+		print("unloading ...")
+	end
+	goDir(1)
+end	
 local function shouldDig(name)
 	if type(name) ~= "string" then return false end
 	for _,ign in ipairs(ignore) do
@@ -167,7 +175,6 @@ local function isFull()
 	end
 	return true
 end
-
 for i = start,totalBlocks-1,1 do
 	dig = true
 	x = (i % rx) + 1
@@ -197,10 +204,11 @@ for i = start,totalBlocks-1,1 do
 	end
 	if isFull() then
 		print("drone is stuffed, returning")
-		digTo(startPos,true)
-		return true
+		unload()
+		print("finished unloading, returning to work")
 	end
 end
-digTo(startPos,true)
+unload()
+print("finished quarry")
 print(dump(digged))
 return true

@@ -103,21 +103,31 @@ end
 function drone_move_to_pos(drone,target)
 	local result,reason = drone_check_target(target)
 	local node = minetest.get_node(target)
-	print("moveto: "..node.name.." "..dump(result).." "..dump(reason))
-	
 	local pos = drone.object:getpos()	
-	if get_blockpos(target) ~= get_blockpos(pos) or node.name == "ignore" then
-		minetest.forceload_block(target)
+	--print("moveto: "..node.name.." "..dump(result).." "..dump(reason).." "..minetest.hash_node_position(get_blockpos(pos)))
+	
+	local forceloaded = false
+	if minetest.hash_node_position(get_blockpos(target)) ~= minetest.hash_node_position(get_blockpos(pos)) or node.name == "ignore" then
+		print("FORCELOAD LOAD: "..minetest.hash_node_position(get_blockpos(target)))
+		local r = minetest.forceload_block(target)
+		if not r then print("FORCELOAD ERROR, COULD NOT FORCE") end
+		forceloaded = true
 		coroutine.yield() -- give chance to load block
 	end
 	if minetest.get_node(target).name == "ignore" then
-	while minetest.get_node(target).name == "ignore" do
-		print("waiting for block to load @ "..target.x..","..target.y..","..target.z)
-		minetest.forceload_block(target)
-		coroutine.yield()
-		
-	end
-	print("ok, waited")
+		while minetest.get_node(target).name == "ignore" do
+			local bmin,bmax = {},{}
+			bmin.x = math.min(pos.x,target.x) - 1
+			bmin.y = math.min(pos.y,target.y) - 1
+			bmin.z = math.min(pos.z,target.z) - 1
+			bmax.x = math.max(pos.x,target.x) + 1
+			bmax.y = math.max(pos.y,target.y) + 1
+			bmax.z = math.max(pos.z,target.z) + 1
+			local v=VoxelManip():read_from_map(bmin,bmax)
+			print("waiting for block to load @ "..target.x..","..target.y..","..target.z.." ("..minetest.hash_node_position(get_blockpos(target)).."): "..dump(v).." "..dump({bmin,bmax}))
+			coroutine.yield() -- give chance to load block
+		end
+		print("ok, waited")
 	end
 	if not result then return result,reason end
 	
@@ -125,7 +135,7 @@ function drone_move_to_pos(drone,target)
 	dir.x = dir.x - pos.x
 	dir.y = dir.y - pos.y
 	dir.z = dir.z - pos.z
-	local old = pos
+	local old = table.copy(pos)
 	
 	for i=1,steps,1 do
 		pos.x = pos.x + dir.x/steps
@@ -134,7 +144,8 @@ function drone_move_to_pos(drone,target)
 		drone.object:moveto(pos,true)
 		coroutine.yield()
 	end
-	if get_blockpos(old) ~= get_blockpos(pos) then
+	if forceloaded then
+		print("FORCELOAD FREE: "..minetest.hash_node_position(get_blockpos(old)))
 		minetest.forceload_free_block(old)
 	end
 	return true
@@ -290,7 +301,30 @@ function drone_dig(drone,target,pickup,print)
 	
 	return name
 end
-
+local function eject_drops(drops, pos, radius)
+	local drop_pos = vector.new(pos)
+	for _, item in pairs(drops) do
+		local count = item:get_count()
+		local max = item:get_stack_max()
+		if count > max then
+			item:set_count(max)
+		end
+		while count > 0 do
+			if count < max then
+				item:set_count(count)
+			end
+			rand_pos(pos, drop_pos, radius)
+			local obj = minetest.add_item(drop_pos, item)
+			if obj then
+				obj:get_luaentity().collect = true
+				obj:setacceleration({x=0, y=radius, z=0})
+				obj:setvelocity({x=math.random(-radius, radius), y=radius,
+						z=math.random(-radius, radius)})
+			end
+			count = count - max
+		end
+	end
+end
 local function tobool(bool)
 	if type(bool) == "boolean" and bool then return true
 	elseif type(bool) == "number" and bool > 0 then return true
@@ -300,6 +334,47 @@ local function tobool(bool)
 	end
 	return false 
 end
+local function drone_drop(drone,target,slot,amount)
+	local item = nil
+	local inv = minetest.get_inventory({type="detached",name="dronetest_drone_"..drone.id})
+	if inv == nil then dronetest.log("BUG: drone without inventory!") return nil end
+	if amount == nil then amount = 1 else amount = tonumber(amount) end
+	if inv:is_empty("main") then -- empty inventory
+		return nil
+	end
+	if type(slot) ~= number or slot < 1 or slot > inv:get_size("main") then
+		slot = 1
+		stack = inv:get_stack("main",slot)
+		while stack:is_empty() do
+			slot = slot + 1
+			if slot > inv:get_size("main") then
+				return nil
+			end
+			stack = inv:get_stack("main",slot)
+		end
+		item = stack:take_item(amount)
+	end
+	
+	local tinv = minetest.get_meta(target):get_inventory()
+	if tinv == nil then
+		eject_drops(item,target,1)
+		inv:set_stack("main",slot,stack)
+		return true
+	end
+	
+	if tinv:room_for_item("main",item) then
+		if tinv:add_item("main",item) then
+			inv:set_stack("main",slot,stack)
+			return true
+		else 
+			return false
+		end
+	end
+	
+	inv:set_stack("main",slot,stack)
+	return true
+end
+
 -- the drone's actions are different in that they all take the drone's id as first parameter, and a print-callback as the second.
 dronetest.drone_actions = {
 	test = {desc="a test",func=function(drone,print) print("TEST") end},
@@ -364,9 +439,18 @@ dronetest.drone_actions = {
 	place = {desc="Places stuff from inventory in front of drone.",func=function() end},
 	placeUp = {desc="Places stuff from inventory above drone.",func=function() end},
 	placeDown = {desc="Places stuff from inventory below drone.",func=function() end},
-	drop = {desc="Places stuff from inventory in front of drone.",func=function() end},
-	dropUp = {desc="Places stuff from inventory above drone.",func=function() end},
-	dropDown = {desc="Places stuff from inventory below drone.",func=function() end},
+	drop = {desc="Drop.",func=function(drone,print,slot,amount) 
+		local target = drone_get_forward(drone)
+		return drone_drop(drone,target,slot,amount)
+	end},
+	dropUp = {desc="Drop up.",func=function(drone,print,slot,amount) 
+		local target = drone_get_up(drone)
+		return drone_drop(drone,target,slot,amount)
+	end},
+	dropDown = {desc="Drop down.",func=function(drone,print,slot,amount) 
+		local target = drone_get_down(drone)
+		return drone_drop(drone,target,slot,amount)
+	end},
 	inspectInventory = {desc="Inspects block in inventory slot, returns name or nil.",func=function(drone,print,slot) 
 		local inv = minetest.get_inventory({type="detached",name="dronetest_drone_"..drone.id})
 		if inv == nil then dronetest.log("BUG: drone without inventory!") return nil end
