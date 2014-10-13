@@ -284,7 +284,8 @@ minetest.register_globalstep(function(dtime)
 	local id
 	local s
 	timer = timer + dtime;
-	if timer >= dronetest.globalstep_interval then
+	while timer >= dronetest.globalstep_interval do
+		for i = 1,dronetest.cycles_per_step,1 do
 		--minetest.chat_send_all("dronetest globalstep @"..timer.." with "..count(dronetest.active_systems).." systems.")
 		for id,s in pairs(dronetest.active_systems) do
 			co = s.coroutine_handle
@@ -303,6 +304,7 @@ minetest.register_globalstep(function(dtime)
 				dronetest.active_systems[id] = nil
 			end
 		end
-		timer = 0
+		end
+		timer = timer - dronetest.globalstep_interval
 	end
 end)

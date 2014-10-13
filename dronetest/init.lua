@@ -20,6 +20,7 @@ dronetest = {
 	last_id = 0,
 	last_drone_id = 0,
 	globalstep_interval = 0.01,
+	cycles_per_step = 4,
 	drones = {},
 	events = {},
 	console_histories = {},
@@ -34,7 +35,8 @@ dronetest = {
 		last_id = "The last id given to a computer.",
 		last_drone_id = "The last id given to a drone.",
 		globalstep_interval = "Interval to run LUA-coroutines at.",
-		max_userspace_instructions = "How many instructions may a player execute on a system without yielding?"
+		cycles_per_step = "Resume-cycles per global step. More makes computer seem faster to user.",
+		max_userspace_instructions = "How many instructions may a player execute on a system without yielding?",
 	},
 }
 	
@@ -55,6 +57,7 @@ dofile(dronetest.mod_dir.."/userspace.lua")
 dofile(dronetest.mod_dir.."/gui.lua")
 dofile(dronetest.mod_dir.."/computer.lua")
 dofile(dronetest.mod_dir.."/drone.lua")
+dofile(dronetest.mod_dir.."/craft.lua")
 
 
 -- Some message that the mod has loaded/unloaded

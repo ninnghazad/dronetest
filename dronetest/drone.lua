@@ -230,7 +230,7 @@ function drone_get_back(drone)
 end
 function drone_get_up(drone)
 	local pos = drone.object:getpos()
-	local target = pos
+	local target = table.copy(pos)
 	target.y = target.y + 1
 	return target
 end
@@ -240,6 +240,13 @@ function drone_get_down(drone)
 	target.y = target.y - 1
 	return target
 end
+local function rand_pos(pos, radius)
+	local target = table.copy(pos)
+	target.x = target.x + math.random(-radius*100, radius*100)/100
+	target.z = target.z + math.random(-radius*100, radius*100)/100
+	return target
+end
+	
 function drone_dig(drone,target,pickup,print)
 	if pickup == nil then pickup = true end
 	local node = minetest.get_node(target)
@@ -272,12 +279,6 @@ function drone_dig(drone,target,pickup,print)
 	
 	minetest.dig_node(target)
 	
-	local function rand_pos(pos, radius)
-		local target = pos
-		target.x = target.x + math.random(-radius*100, radius*100)/100
-		target.z = target.z + math.random(-radius*100, radius*100)/100
-		return target
-	end
 	-- TODO: 
 	local itemstacks = minetest.get_node_drops(node.name)
 	local oinv = minetest.get_inventory({type="detached",name="dronetest_drone_"..drone.id})
@@ -313,11 +314,11 @@ local function eject_drops(drops, pos, radius)
 			if count < max then
 				item:set_count(count)
 			end
-			rand_pos(pos, drop_pos, radius)
+			drop_pos = rand_pos(pos, radius)
 			local obj = minetest.add_item(drop_pos, item)
 			if obj then
 				obj:get_luaentity().collect = true
-				obj:setacceleration({x=0, y=radius, z=0})
+				obj:setacceleration({x=0, y=radius/10, z=0})
 				obj:setvelocity({x=math.random(-radius, radius), y=radius,
 						z=math.random(-radius, radius)})
 			end
@@ -337,10 +338,11 @@ end
 local function drone_drop(drone,target,slot,amount)
 	local item = nil
 	local inv = minetest.get_inventory({type="detached",name="dronetest_drone_"..drone.id})
-	if inv == nil then dronetest.log("BUG: drone without inventory!") return nil end
+	if inv == nil then dronetest.log("BUG: drone without inventory!") return false end
 	if amount == nil then amount = 1 else amount = tonumber(amount) end
 	if inv:is_empty("main") then -- empty inventory
-		return nil
+		print("nothing to drop")
+		return false
 	end
 	if type(slot) ~= number or slot < 1 or slot > inv:get_size("main") then
 		slot = 1
@@ -348,7 +350,8 @@ local function drone_drop(drone,target,slot,amount)
 		while stack:is_empty() do
 			slot = slot + 1
 			if slot > inv:get_size("main") then
-				return nil
+				print("slot out of range")
+				return false
 			end
 			stack = inv:get_stack("main",slot)
 		end
@@ -356,25 +359,40 @@ local function drone_drop(drone,target,slot,amount)
 	end
 	
 	local tinv = minetest.get_meta(target):get_inventory()
-	if tinv == nil then
-		eject_drops(item,target,1)
+	if tinv == nil or not tinv:room_for_item("main",item) then
+		eject_drops({item},target,1)
 		inv:set_stack("main",slot,stack)
+		print("no target inventory or full, ejecting")
 		return true
-	end
-	
-	if tinv:room_for_item("main",item) then
+	else
 		if tinv:add_item("main",item) then
 			inv:set_stack("main",slot,stack)
+			print("ok: "..stack:get_count())
 			return true
 		else 
+			print("cannot add item")
 			return false
 		end
 	end
 	
 	inv:set_stack("main",slot,stack)
+	print("hmmmm")
 	return true
 end
-
+function drone_place(drone,target,slot)
+	local inv = minetest.get_inventory({type="detached",name="dronetest_drone_"..drone.id})
+	if inv == nil then dronetest.log("BUG: drone without inventory!") return nil end
+	slot = tonumber(slot)
+	local stack = inv:get_stack("main",slot)
+	if stack == nil or stack:is_empty() then return nil end
+	print("drone_place: "..slot.." # "..stack:get_name())
+	minetest.place_node(target,{name=stack:get_name()})
+	stack:take_item(1)
+	inv:set_stack("main",slot,stack)
+	
+	return true
+end
+_print = print
 -- the drone's actions are different in that they all take the drone's id as first parameter, and a print-callback as the second.
 dronetest.drone_actions = {
 	test = {desc="a test",func=function(drone,print) print("TEST") end},
@@ -436,9 +454,18 @@ dronetest.drone_actions = {
 			local target = drone_get_down(drone)
 			return drone_suck(drone,target,inv)
 		end},
-	place = {desc="Places stuff from inventory in front of drone.",func=function() end},
-	placeUp = {desc="Places stuff from inventory above drone.",func=function() end},
-	placeDown = {desc="Places stuff from inventory below drone.",func=function() end},
+	place = {desc="Places stuff from inventory in front of drone.",func=function(drone,print,slot) 
+		local target = drone_get_forward(drone)
+		return drone_place(drone,target,slot)
+	end},
+	placeUp = {desc="Places stuff from inventory above drone.",func=function(drone,print,slot) 
+		local target = drone_get_up(drone)
+		return drone_place(drone,target,slot)
+	end},
+	placeDown = {desc="Places stuff from inventory below drone.",func=function(drone,print,slot) 
+		local target = drone_get_down(drone)
+		return drone_place(drone,target,slot)
+	end},
 	drop = {desc="Drop.",func=function(drone,print,slot,amount) 
 		local target = drone_get_forward(drone)
 		return drone_drop(drone,target,slot,amount)
@@ -458,6 +485,14 @@ dronetest.drone_actions = {
 		local item = inv:get_stack("main",slot)
 		if item == nil then return nil end
 		return item:get_name()
+	end},
+	findInInventory = {desc="Finds item in inventory by name and returns it's slot number.",func=function(drone,print,name) 
+		local inv = minetest.get_inventory({type="detached",name="dronetest_drone_"..drone.id})
+		if inv == nil then dronetest.log("BUG: drone without inventory!") return nil end
+		for i = 1,inv:get_size("main"),1 do
+			if inv:get_stack("main",i):get_name() == name then return i end
+		end
+		return false
 	end},
 	inspect = {desc="Inspects block in front of drone, returns name or nil.",func=function(drone,print) 
 		local target = drone_get_forward(drone)
