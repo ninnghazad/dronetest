@@ -1,4 +1,14 @@
--- quarry demo
+--[[ quarry demo
+this probably should be removed for release, or be put as a secret-prog. 
+would take away a lot of fun if we just gave a working quarry to the player, wouldn't it?!
+this contacts a drone and makes it dig through a block below it's current position.
+the drone will try to unload items to a chest above it's current position, and will return
+to that position once finished.
+this supports backfilling with custom ignores, meaning you can specify blocknames in
+ignore{} which will be either not be dug at all, or be placed back after the drone dug through.
+this leaves less of a mess in the landscape.
+-ninnghazad
+--]]
 -- options
 	-- table of nodenames to to pickup/dig
 	local ignore = {"default:stone","default:gravel","default:dirt","default:sand","default:dirt_with_grass","default:cobble","default:leaves"}

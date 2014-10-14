@@ -2,13 +2,14 @@
 local function get_computer_formspec(id,channel)
 	local formspec =
 		"size[11,1]"..
-		default.gui_bg..
-		default.gui_bg_img..
-		default.gui_slots..
-		"field[0.3,0.7;7,1;input;;]"..
+--		default.gui_bg..
+--		default.gui_bg_img..
+--		default.gui_slots..
+		"proxy[0.3,0.4;1,1;proxy;keyboard.png;keyboard.png]"..
+		"field[1.3,0.7;6,1;input;;]"..
 		"field[7.3,0.7;2,1;channel;channel;"..channel.."]"..
 		"button[9,0.4;1,1;execute;EXE]"..
-		"label[0.3,0.0;COMPUTER_ID: "..id.."]"
+		"label[0.0,-1.0;COMPUTER_ID: "..id.."]"
 		if dronetest.active_systems[id] ~= nil then formspec = formspec.."button[10,0.4;1,1;poweroff;OFF]" 
 		else formspec = formspec.."button[10,0.4;1,1;poweron;ON]" end
 	return formspec
@@ -218,7 +219,7 @@ minetest.register_node("dronetest:computer", {
 	end,
 	on_receive_fields = function(pos, formname, fields, sender)
 		local meta = minetest.get_meta(pos)
-		dronetest.log("on_receive_fields received '"..formname.."'")
+		dronetest.log("on_receive_fields received '"..formname.."': "..dump(fields))
 		local id = meta:get_int("id")
 		if fields["channel"] ~= nil then
 			meta:set_string("channel",fields.channel)
