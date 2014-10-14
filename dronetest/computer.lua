@@ -5,7 +5,7 @@ local function get_computer_formspec(id,channel)
 --		default.gui_bg..
 --		default.gui_bg_img..
 --		default.gui_slots..
-		"proxy[0.3,0.4;1,1;proxy;keyboard.png;keyboard.png]"..
+		"proxy[0.3,0.4;1,1;proxy;keyboard.png;keyboardActive.png]"..
 		"field[1.3,0.7;6,1;input;;]"..
 		"field[7.3,0.7;2,1;channel;channel;"..channel.."]"..
 		"button[9,0.4;1,1;execute;EXE]"..
@@ -239,7 +239,7 @@ minetest.register_node("dronetest:computer", {
 				deactivate(pos)
 			end
 			minetest.chat_send_player(sender:get_player_name(),"system #"..id.." deactivated, now "..count(dronetest.active_systems).." systems online.")
-		elseif fields["input"] ~= nil and fields["input"] ~= "" then
+		elseif fields["input"] ~= nil and fields["execute"] ~= nil and fields["input"] ~= "" then
 			dronetest.log("command: "..fields["input"])
 			local id = meta:get_int("id")
 			if dronetest.active_systems[id] ~= nil then
@@ -251,6 +251,9 @@ minetest.register_node("dronetest:computer", {
 				minetest.chat_send_player(sender:get_player_name(),"Cannot exec, activate system first.")
 			end
 		elseif fields["quit"] == true then
+			return true
+		elseif fields["proxy"] ~= nil and fields["proxy"] ~= "" then
+			print("received keyboard event through proxy: "..fields["proxy"])
 			return true
 		end
 		

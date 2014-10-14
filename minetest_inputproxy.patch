@@ -1,8 +1,19 @@
 diff --git a/src/guiFormSpecMenu.cpp b/src/guiFormSpecMenu.cpp
-index a502c96..5b12b74 100644
+index a502c96..9d949a0 100644
 --- a/src/guiFormSpecMenu.cpp
 +++ b/src/guiFormSpecMenu.cpp
-@@ -1231,6 +1231,94 @@ void GUIFormSpecMenu::parseField(parserData* data,std::string element,
+@@ -91,7 +91,9 @@
+ 	m_text_dst(tdst),
+ 	m_ext_ptr(ext_ptr),
+ 	m_font(dev->getGUIEnvironment()->getSkin()->getFont()),
+-	m_formspec_version(0)
++	m_formspec_version(0),
++	m_dirty(false)
++	
+ #ifdef __ANDROID__
+ 	,m_JavaDialogFieldName(L"")
+ #endif
+@@ -1231,6 +1233,83 @@ void GUIFormSpecMenu::parseField(parserData* data,std::string element,
  	errorstream<< "Invalid field element(" << parts.size() << "): '" << element << "'"  << std::endl;
  }
  
@@ -35,8 +46,6 @@ index a502c96..5b12b74 100644
 +	if(data->bp_set != 2)
 +		errorstream<<"WARNING: invalid use of positioned proxy without a size[] element"<<std::endl;
 +
-+	
-+
 +	active_image_name = unescape_string(active_image_name);
 +	image_name = unescape_string(image_name);
 +
@@ -47,16 +56,9 @@ index a502c96..5b12b74 100644
 +		258+m_fields.size()
 +	);
 +
-+	gui::IGUISkin* skin = Environment->getSkin();
 +	gui::IGUIEditBox * _e;
-+	
-+
 +	spec.send = true;
 +	_e = Environment->addEditBox(L"-", rect, true, this, spec.fid);
-+
-+	if (spec.fname == data->focused_fieldname) {
-+		Environment->setFocus(_e);
-+	}
 +
 +	irr::SEvent evt;
 +	evt.EventType            = EET_KEY_INPUT_EVENT;
@@ -68,9 +70,8 @@ index a502c96..5b12b74 100644
 +	_e->OnEvent(evt);
 +
 +	_e->setDrawBackground(false);
-+	_e->setDrawBorder(true
-+		
-+	);
++	_e->setDrawBorder(true);
++	// make invisible through color
 +	video::SColor color = video::SColor(0,0,0,0);
 +	_e->setOverrideColor(color);
 +	_e->enableOverrideColor(true);
@@ -78,18 +79,17 @@ index a502c96..5b12b74 100644
 +	pos = AbsoluteRect.UpperLeftCorner;
 +	pos.X += stof(v_pos[0]) * (float) spacing.X;
 +	pos.Y += stof(v_pos[1]) * (float) spacing.Y;
-+
 +	geom.X = stof(v_geom[0]) * (float)imgsize.X;
 +	geom.Y = stof(v_geom[1]) * (float)imgsize.Y;
-+	Environment->setFocus(_e);
-+	
++
 +	// paint a little picture
-+	
-+	if (spec.fname == data->focused_fieldname) 
++	if(spec.fname == data->focused_fieldname) {
 +		m_images.push_back(ImageDrawSpec(active_image_name, pos,geom));
-+	else
++		Environment->setFocus(_e);
++	} else {
 +		m_images.push_back(ImageDrawSpec(image_name, pos,geom));
-+ 	
++	}
++	
 +	spec.ftype = f_Proxy;
 +	m_fields.push_back(spec);
 +	
@@ -97,19 +97,41 @@ index a502c96..5b12b74 100644
  void GUIFormSpecMenu::parseLabel(parserData* data,std::string element)
  {
  	std::vector<std::string> parts = split(element,';');
-@@ -1777,6 +1865,11 @@ void GUIFormSpecMenu::parseElement(parserData* data, std::string element)
- 		parseField(data,description,type);
+@@ -1778,6 +1857,11 @@ void GUIFormSpecMenu::parseElement(parserData* data, std::string element)
  		return;
  	}
-+	
+ 	
 +	if (type == "proxy") {
 +		parseProxy(data,description);
 +		return;
 +	}
- 
++
  	if (type == "label") {
  		parseLabel(data,description);
-@@ -2653,6 +2746,29 @@ static bool isChild(gui::IGUIElement * tocheck, gui::IGUIElement * parent)
+ 		return;
+@@ -2190,13 +2274,19 @@ void GUIFormSpecMenu::drawSelectedItem()
+ 
+ void GUIFormSpecMenu::drawMenu()
+ {
+-	if(m_form_src){
++	bool regenerate = false;
++	if(m_form_src) {
+ 		std::string newform = m_form_src->getForm();
+ 		if(newform != m_formspec_string){
+ 			m_formspec_string = newform;
+-			regenerateGui(m_screensize_old);
++			regenerate = true;
++		}
+ 	}
++	if(m_dirty) {
++		regenerate = true;
++		m_dirty = false;
+ 	}
++	if(regenerate) regenerateGui(m_screensize_old);
+ 	
+ 	updateSelectedItem();
+ 
+@@ -2653,6 +2743,30 @@ static bool isChild(gui::IGUIElement * tocheck, gui::IGUIElement * parent)
  
  bool GUIFormSpecMenu::preprocessEvent(const SEvent& event)
  {
@@ -117,29 +139,30 @@ index a502c96..5b12b74 100644
 +		KeyPress kp(event.KeyInput);
 +		gui::IGUIElement *focused = Environment->getFocus();
 +		if(focused && isMyChild(focused)) {
-+			if(focused->getType() == gui::EGUIET_EDIT_BOX && getTypeByID(focused->getID()) == f_Proxy) {
-+				((gui::IGUIEditBox*)focused)->setDrawBackground(true);
++			if(getTypeByID(focused->getID()) == f_Proxy) {
++				//((gui::IGUIEditBox*)focused)->setDrawBackground(true);
 +				std::ostringstream os;
 +				os << event.KeyInput.Key << ":" << (event.KeyInput.Control?1:0) << ":" << (event.KeyInput.Shift?1:0);
 +				focused->setText(irr::core::stringw(os.str().c_str()).c_str());
-+				acceptInput();
++				acceptInput(quit_mode_no);
++				regenerateGui(m_screensize_old);
 +				return true;
 +			}
 +		}
-+	} else {
++	} /*else {
 +		gui::IGUIElement *focused = Environment->getFocus();
 +		if(focused && isMyChild(focused)) {
-+			if(focused->getType() == gui::EGUIET_EDIT_BOX && getTypeByID(focused->getID()) == f_Proxy) {
++			if(getTypeByID(focused->getID()) == f_Proxy) {
 +				((gui::IGUIEditBox*)focused)->setDrawBackground(false);
 +			}
 +		}
 +		
-+	}
++	}*/
 +	
  	// Fix Esc/Return key being eaten by checkboxen and tables
  	if(event.EventType==EET_KEY_INPUT_EVENT) {
  		KeyPress kp(event.KeyInput);
-@@ -2668,6 +2784,7 @@ bool GUIFormSpecMenu::preprocessEvent(const SEvent& event)
+@@ -2668,6 +2782,7 @@ bool GUIFormSpecMenu::preprocessEvent(const SEvent& event)
  			}
  		}
  	}
@@ -147,7 +170,23 @@ index a502c96..5b12b74 100644
  	// Mouse wheel events: send to hovered element instead of focused
  	if(event.EventType==EET_MOUSE_INPUT_EVENT
  			&& event.MouseInput.Event == EMIE_MOUSE_WHEEL) {
-@@ -3392,3 +3509,19 @@ std::wstring GUIFormSpecMenu::getLabelByID(s32 id)
+@@ -3252,6 +3367,15 @@ bool GUIFormSpecMenu::OnEvent(const SEvent& event)
+ 				return true;
+ 			}
+ 		}
++		
++		if(event.GUIEvent.EventType==gui::EGET_ELEMENT_FOCUSED
++				&& isVisible()) {
++			if(event.GUIEvent.Caller->getID() != event.GUIEvent.Element->getID()) {
++				// regenerate on focus change to update decorations
++				m_dirty = true;
++			}
++		}
++		
+ 		if((event.GUIEvent.EventType == gui::EGET_BUTTON_CLICKED) ||
+ 				(event.GUIEvent.EventType == gui::EGET_CHECKBOX_CHANGED) ||
+ 				(event.GUIEvent.EventType == gui::EGET_COMBO_BOX_CHANGED) ||
+@@ -3392,3 +3516,19 @@ bool GUIFormSpecMenu::OnEvent(const SEvent& event)
  	}
  	return L"";
  }
@@ -168,10 +207,10 @@ index a502c96..5b12b74 100644
 +	return f_Unknown;
 +}
 diff --git a/src/guiFormSpecMenu.h b/src/guiFormSpecMenu.h
-index 40be59b..59ed2cb 100644
+index 40be59b..35f1685 100644
 --- a/src/guiFormSpecMenu.h
 +++ b/src/guiFormSpecMenu.h
-@@ -42,6 +42,7 @@ typedef enum {
+@@ -42,6 +42,7 @@
  	f_CheckBox,
  	f_DropDown,
  	f_ScrollBar,
@@ -179,7 +218,15 @@ index 40be59b..59ed2cb 100644
  	f_Unknown
  } FormspecFieldType;
  
-@@ -388,7 +389,9 @@ class GUIFormSpecMenu : public GUIModalMenu
+@@ -349,6 +350,7 @@ class GUIFormSpecMenu : public GUIModalMenu
+ 	GUIFormSpecMenu **m_ext_ptr;
+ 	gui::IGUIFont    *m_font;
+ 	unsigned int      m_formspec_version;
++	bool              m_dirty;
+ 	
+ 	typedef struct {
+ 		v2s32 size;
+@@ -388,7 +390,9 @@ class GUIFormSpecMenu : public GUIModalMenu
  	void parseDropDown(parserData* data,std::string element);
  	void parsePwdField(parserData* data,std::string element);
  	void parseField(parserData* data,std::string element,std::string type);
@@ -189,7 +236,7 @@ index 40be59b..59ed2cb 100644
  	void parseTextArea(parserData* data,std::vector<std::string>& parts,
  			std::string type);
  	void parseLabel(parserData* data,std::string element);
-@@ -421,6 +424,7 @@ class GUIFormSpecMenu : public GUIModalMenu
+@@ -421,6 +425,7 @@ class GUIFormSpecMenu : public GUIModalMenu
  
  	std::wstring getLabelByID(s32 id);
  	std::wstring getNameByID(s32 id);
