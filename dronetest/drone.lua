@@ -204,6 +204,7 @@ function drone_suck(drone,target,inv)
 end
 function drone_get_forward(drone)
 	local pos = drone.object:getpos()
+	if pos == nil or drone.removed then error("lost contact") end
 	local yaw = drone.object:getyaw()
 	local dir = dronetest.yaw2dir(dronetest.snapRotation(yaw))
 	if dir == 0 then dir = 2 
@@ -385,8 +386,9 @@ function drone_place(drone,target,slot)
 	slot = tonumber(slot)
 	local stack = inv:get_stack("main",slot)
 	if stack == nil or stack:is_empty() then return nil end
-	print("drone_place: "..slot.." # "..stack:get_name())
-	minetest.place_node(target,{name=stack:get_name()})
+	print("drone_place: "..slot.." # "..stack:get_name()..dump(target))
+	if stack:get_name() == "ignore" then error("AAAAAAAAAAAARG") end
+	minetest.set_node(target,{name=stack:get_name()})
 	stack:take_item(1)
 	inv:set_stack("main",slot,stack)
 	
@@ -456,6 +458,7 @@ dronetest.drone_actions = {
 		end},
 	place = {desc="Places stuff from inventory in front of drone.",func=function(drone,print,slot) 
 		local target = drone_get_forward(drone)
+		_print("place!"..dump(target))
 		return drone_place(drone,target,slot)
 	end},
 	placeUp = {desc="Places stuff from inventory above drone.",func=function(drone,print,slot) 
@@ -464,6 +467,7 @@ dronetest.drone_actions = {
 	end},
 	placeDown = {desc="Places stuff from inventory below drone.",func=function(drone,print,slot) 
 		local target = drone_get_down(drone)
+		_print("placedown!")
 		return drone_place(drone,target,slot)
 	end},
 	drop = {desc="Drop.",func=function(drone,print,slot,amount) 

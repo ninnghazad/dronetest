@@ -145,13 +145,14 @@ function digDir(dir,pickup)
 end
 
 function placeDir(dir,slot)
-print("place slot "..slot)
+--print("place slot "..slot)
 	if dir == 4 then return drone.placeUp(slot)
 	elseif dir == 5 then return drone.placeDown(slot)
 	else turnDir(dir) return drone.place(slot) end
 end
-local reverseDirs = { [0] = 2,3,0,1,5,4}
+local reverseDirs = { [0] = 2,[1] = 3, [2] = 0, [3] = 1,[4] = 5,[5] = 4}
 function digTo(target,pickup)
+	--print("digTo: "..dump(target))
 	local dir = -1
 	local counter = 0
 	local digged = ""
@@ -170,39 +171,43 @@ function digTo(target,pickup)
 			digged = digDir(dir,pickup or backfill)
 			r,t = goDir(dir)
 			if not r then
-				return false
+				return false,t
 			end
-			doBackfill_dir = dir
-			if doBackfill ~= nil then doBackfill() end
-			doBackfill = nil
+			
+			if doBackfill ~= nil then doBackfill(dir) end
 			if digged ~= nil and backfill and not pickup and digged ~= "ignore" and minetest.registered_nodes[digged] ~= nil then
 				local d = minetest.registered_nodes[digged].drop
 				if d == nil then d = digged end
 				local slot = drone.findInInventory(d)
-				--print("BACKFILL! "..digged.." "..dump(slot).." "..inv:get_stack("main",slot):get_name().." "..inv:get_stack("main",slot):get_count())
+			--	print("BACKFILL: "..digged) -- .." "..dump(slot).." "..inv:get_stack("main",slot):get_name().." "..inv:get_stack("main",slot):get_count())
 				if slot then
 					doBackfill_slot = slot
-					doBackfill = function()
-						--print("WILL BACKFILL "..d.." USING SLOT "..doBackfill_slot.." bf: "..dump(backfill).." pu: "..dump(pickup))
-						placeDir(reverseDirs[doBackfill_dir],doBackfill_slot)
-						turnDir(doBackfill_dir)
-						--print("BACKFILLED!")
+					doBackfill = function(dir)
+				--		print("WILL BACKFILL USING SLOT "..doBackfill_slot.." dir: "..dir.." bf: "..dump(backfill).." pu: "..dump(pickup))
+						placeDir(reverseDirs[dir],doBackfill_slot)
+						turnDir(dir)
+				--		print("BACKFILLED!")
 					end
 				end
 			end
 		else
-			doBackfill_dir = dir
-			if doBackfill ~= nil then doBackfill() end
+			if doBackfill ~= nil then doBackfill(dir) end
 			doBackfill = nil
+		
 		end
+		
 		
 		pos.x = pos.x + xDirs[dir]
 		pos.z = pos.z + zDirs[dir]
 		pos.y = pos.y + yDirs[dir]
 	end
+	--if doBackfill ~= nil then doBackfill(dir) end
+	--doBackfill = nil
+		
 	return true
 end
 local function unload()
+	print("unload ...")
 	digTo(startPos,true)
 --	goDir(3)
 	while drone.dropUp() do
@@ -215,15 +220,16 @@ local function shouldDig(name)
 	if type(name) ~= "string" then return false end
 	for _,ign in ipairs(ignore) do
 		if ign == name or ign == minetest.registered_nodes[name].drop then
-			print("block "..name.." matches ignore "..ign)
+		--	print("block "..name.." matches ignore "..ign)
 			return false
 		end
 	end
-	print("block "..name.." doesnt match ignore")
+	--print("block "..name.." doesnt match ignore")
 	return true
 end
 local function isFull()
-	for i = 1,invSize,1 do
+	-- save 1 free spot so drone can backfill 
+	for i = 1,invSize-1,1 do
 		if inv:get_stack("main",i):is_empty() then return false end
 	end
 	return true
