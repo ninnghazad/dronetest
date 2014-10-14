@@ -9,7 +9,7 @@ local function get_computer_formspec(id,channel)
 		"field[1.3,0.7;6,1;input;;]"..
 		"field[7.3,0.7;2,1;channel;channel;"..channel.."]"..
 		"button[9,0.4;1,1;execute;EXE]"..
-		"label[0.0,-1.0;COMPUTER_ID: "..id.."]"
+		"label[1.3,0.0;COMPUTER_ID: "..id.."]"
 		if dronetest.active_systems[id] ~= nil then formspec = formspec.."button[10,0.4;1,1;poweroff;OFF]" 
 		else formspec = formspec.."button[10,0.4;1,1;poweron;ON]" end
 	return formspec
