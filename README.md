@@ -73,6 +73,7 @@ Look around the source for examples on how to get stuff done.
   - Real GUI with charbased input in good refresh-rate.
   - Better shell, based on a better GUI. with color, and settable cursor-position, redraws...
   - Wrapping more important functions like load* and do*
+  - using minetest.is_protected for all stuff that could be used for grieving.
 - APIs:
 See http://computercraft.info/wiki/Category:APIs
 The most important ones are:
