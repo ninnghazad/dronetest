@@ -51,9 +51,9 @@ https://github.com/minetest/minetest/pull/1606
 http://mesecons.net/developers.php
 
 ###Current problems:
-~~- Bug with calling minetest.* functions from coroutines hinders use of minetest.get_objects_inside_radius() in userspace.
+  - ~~Bug with calling minetest.* functions from coroutines hinders use of minetest.get_objects_inside_radius() in userspace.
 This means you cannot get entities in user and api-space, so drones will drive through each other. minor annoyance.~~
-~~- Right now systems do not get automatically booted when server starts, somewhat on purpose to deal with nasty bugs.
+  - ~~Right now systems do not get automatically booted when server starts, somewhat on purpose to deal with nasty bugs.
 because of that you may have to click 'OFF' and then 'ON' after a server restart to continue using that system.~~
   - There is a memleak with unloading textures somewhere in minetest, thusly using the display will leak memory, and sooner or later crash your system. to test computers running a long time, just set the display to some non-existant channel.
   - New input method has to wait for https://github.com/minetest/minetest/pull/1737
@@ -61,14 +61,14 @@ because of that you may have to click 'OFF' and then 'ON' after a server restart
 ##Roadmap:
 Look around the source for examples on how to get stuff done.  
 - Core:
-~~  - Making sure minetest.* function can be savely called through coroutines (see current problems): https://github.com/minetest/minetest/issues/1709~~
-  ~~- Drones need to spawn an invisible node when standing still, so we can interface them with other nodes, like mesecons stuff.~~
+  - ~~Making sure minetest.* function can be savely called through coroutines (see current problems): https://github.com/minetest/minetest/issues/1709~~
+  - ~~Drones need to spawn an invisible node when standing still, so we can interface them with other nodes, like mesecons stuff.~~
   - Peripheral API. working prototype in code, but just has one wrap() function. not really an api yet.
-  ~~- Turn drones into peripherals and still have something like the drone.* api~~
-  ~~- Make recipes and crafting-hooks for computer and drone nodes.~~
+  - ~~Turn drones into peripherals and still have something like the drone.* api~~
+  - ~~Make recipes and crafting-hooks for computer and drone nodes.~~
   - Make drone diggable.
   - Make drone inventories persist restarts: https://github.com/minetest/minetest/issues/1696
-  ~~- Integrate (wireless)networking in event-queue (just where digilines is not enough)~~
+  - ~~Integrate (wireless)networking in event-queue (just where digilines is not enough)~~
   - Better command-parser, with autocomplete.
   - Real GUI with charbased input in good refresh-rate.
   - Better shell, based on a better GUI. with color, and settable cursor-position, redraws...
@@ -90,7 +90,7 @@ The most important ones are:
   - Cool stuff
 - Misc:
   - A drone-model with "wield-points" for tools and peripherals.
-  ~~- Textures~~
+  - ~~Textures~~
   - Sounds (like, beeep)
   - Some good examples
   - Some good tutorials
