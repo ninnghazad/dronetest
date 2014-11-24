@@ -11,6 +11,31 @@ local shell = {}
 function shell.errorHandler(err,level)
 	print("shell error: "..err)
 end
+
+shell.prompt = "# "
+
+-- Shell main loop
+function shell.main()
+	local c,l,cmd
+	while true do
+		term.clear()
+		term.write(shell.prompt)
+		while c ~= '\n' do
+			c = term.getChar()
+			if c ~= '\n' then
+				l = l..c
+			end
+		end
+		cmd = l
+		if cmd == "exit" then
+			print("exiting shell")
+			break
+		end
+		print("shell run: "..cmd)
+		shell.run(cmd)
+	end
+end
+
 function shell.run(cmd,argv)
 	local env = getfenv(2)
 	-- TODO: write real cli parser
