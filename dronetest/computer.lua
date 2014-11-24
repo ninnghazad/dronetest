@@ -254,6 +254,7 @@ minetest.register_node("dronetest:computer", {
 			return true
 		elseif fields["proxy"] ~= nil and fields["proxy"] ~= "" then
 			print("received keyboard event through proxy: "..fields["proxy"])
+			dronetest.events.send_by_id(id,{type="key",msg=fields["proxy"]})
 			return true
 		end
 		
