@@ -121,13 +121,14 @@ local function activate_by_id(id,t,pos)
 	local cr = coroutine.create(function() xpcall(bootstrap,error_handler) end)
 	--debug.sethook(cr,function () coroutine.yield() end,"",100)
 	
-	dronetest.active_systems[id] = {coroutine_handle = cr,events = {},type=t,id=id,pos=pos,last_update = minetest.get_gametime()}
+	dronetest.active_systems[id] = {coroutine_handle = cr,events = {},type=t,id=id,pos=pos,last_update = minetest.get_gametime(),ticket = dronetest.force_loader.register_ticket(pos)}
 	
 	dronetest.log("STATUS: "..coroutine.status(dronetest.active_systems[id].coroutine_handle))
 	dronetest.log("TYPE: "..type(dronetest.active_systems[id]))
 
 	dronetest.log("System #"..id.." has been activated, now "..dronetest.count(dronetest.active_systems).." systems active.")
 	dronetest.print(id,"System #"..id.." has been activated.")
+	
 	return true
 end
 local function activate(pos)
@@ -140,6 +141,7 @@ end
 local function deactivate_by_id(id)
 	
 	dronetest.print(id,"System #"..id.." deactivating.")
+	dronetest.force_loader.unregister_ticket(dronetest.active_systems[id].ticket)
 	dronetest.active_systems[id] = nil
 	dronetest.log("System #"..id.." has been deactivated.")
 	

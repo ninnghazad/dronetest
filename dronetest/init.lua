@@ -47,7 +47,6 @@ package.cpath = package.cpath
 
 lfs = require("lfs")
 
-	
 dofile(dronetest.mod_dir.."/util.lua")
 dofile(dronetest.mod_dir.."/config.lua")
 dofile(dronetest.mod_dir.."/command.lua")
@@ -55,10 +54,13 @@ dofile(dronetest.mod_dir.."/event.lua")
 dofile(dronetest.mod_dir.."/sys.lua")
 dofile(dronetest.mod_dir.."/userspace.lua")
 dofile(dronetest.mod_dir.."/gui.lua")
+dofile(dronetest.mod_dir.."/forceloader.lua")
 dofile(dronetest.mod_dir.."/computer.lua")
 dofile(dronetest.mod_dir.."/drone.lua")
 dofile(dronetest.mod_dir.."/craft.lua")
 
+dronetest.force_loader.load()
+dronetest.force_loader.update()
 
 -- Some message that the mod has loaded/unloaded
 if minetest.setting_getbool("log_mods") then

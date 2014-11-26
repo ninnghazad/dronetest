@@ -36,6 +36,7 @@ local drone = {
 	id = 0,
 	status = 0,
         removed = false,
+	ticket = nil
 }
 
 function drone.on_rightclick(self, clicker)
@@ -105,15 +106,28 @@ function drone_move_to_pos(drone,target)
 	local node = minetest.get_node(target)
 	local pos = drone.object:getpos()	
 	--print("moveto: "..node.name.." "..dump(result).." "..dump(reason).." "..minetest.hash_node_position(get_blockpos(pos)))
+	local ticket = nil
 	
-	local forceloaded = false
 	if minetest.hash_node_position(get_blockpos(target)) ~= minetest.hash_node_position(get_blockpos(pos)) or node.name == "ignore" then
 		print("FORCELOAD LOAD: "..minetest.hash_node_position(get_blockpos(target)))
-		local r = minetest.forceload_block(target)
-		if not r then print("FORCELOAD ERROR, COULD NOT FORCE") end
-		forceloaded = true
+		--[[local r = minetest.forceload_block(target)
 		coroutine.yield() -- give chance to load block
+		while not r do 
+			print("FORCELOAD ERROR, COULD NOT FORCE "..node.name) 
+			r = minetest.forceload_block(target)
+			dronetest.sleep(1)
+			node = minetest.get_node(target)
+			if node.name ~= "ignore" then
+				break
+			end
+		end
+		print("node: "..node.name)
+		
+		--]]
+		
+		ticket = dronetest.force_loader.register_ticket(target)
 	end
+	-- hm... shouldn't this work?
 	if minetest.get_node(target).name == "ignore" then
 		while minetest.get_node(target).name == "ignore" do
 			local bmin,bmax = {},{}
@@ -144,9 +158,10 @@ function drone_move_to_pos(drone,target)
 		drone.object:moveto(pos,true)
 		coroutine.yield()
 	end
-	if forceloaded then
+	if ticket ~= nil then
 		print("FORCELOAD FREE: "..minetest.hash_node_position(get_blockpos(old)))
-		minetest.forceload_free_block(old)
+		dronetest.force_loader.unregister_ticket(drone.ticket)
+		drone.ticket = ticket
 	end
 	return true
 end
@@ -574,7 +589,7 @@ function drone.on_digiline_receive_line(self, channel, msg, senderPos)
 			--local id = self.id
 			--local function rprint(m) msg.print("drone #"..id..": "..m) end
 			local pos = self.object:getpos()
-			if pos == nil or self.removed then error("lost contact") end
+			if pos == nil or self.removed then error("lost contact") return end
 
 			local response = {dronetest.drone_actions[msg.action].func(self,msg.print,msg.argv[1],msg.argv[2],msg.argv[3],msg.argv[4],msg.argv[5])}
 			--local response = {true}
@@ -625,6 +640,7 @@ function drone.on_activate(self, staticdata, dtime_s)
 		self.status = 0
 		self.yaw = 0
 		self.channel = "dronetest:drone:"..self.id
+		
 		print("activate drone "..self.id.." ..")
 		dronetest.save()
 	--	minetest.add_node(pos,"dronetest:drone_virtual")
@@ -654,7 +670,7 @@ function drone.on_activate(self, staticdata, dtime_s)
 	self.object:setyaw(dronetest.snapRotation(self.yaw))
 	--print("Add drone "..self.id.." to list.")
 	
-	
+	self.ticket = dronetest.force_loader.register_ticket(pos)
 	-- TODO: we need to somehow remove these when drones get removed, but there is no on_deactivate handler yet i think
 	--table.insert(dronetest.drones,self.id,self)
 	dronetest.save()
@@ -674,6 +690,7 @@ function drone.on_punch(self, puncher, time_from_last_punch, tool_capabilities, 
 	        return
         end
 	print("remove drone")
+	dronetest.force_loader.unregister_ticket(self.ticket)
 	dronetest.drones[self.id] = nil
 	self.object:remove()
 	self = nil

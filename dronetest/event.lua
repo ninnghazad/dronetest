@@ -70,7 +70,7 @@ dronetest.events.send_all = function(event)
 end
 dronetest.events.wait_for_receive = function(id,filter,channel,msg_id,timeout)
 	--print("WAIT FOR DIGILINE #"..id)
-	print("waiting, events left: "..dronetest.count(dronetest.active_systems[id].events))
+	--print("waiting, events left: "..dronetest.count(dronetest.active_systems[id].events))
 	if dronetest.active_systems[id] == nil then
 		dronetest.log("BUG: dronetest.events.wait_for_receive on inactive system.")
 		return nil
@@ -91,11 +91,11 @@ dronetest.events.wait_for_receive = function(id,filter,channel,msg_id,timeout)
 		print("callback, events left: "..dronetest.count(dronetest.active_systems[id].events))
 	
 	--	print("callback 0: "..msg_id)
-	--	if (msg_id == nil or (type(event.msg)=="table" and type(event.msg.msg_id) ~= "string" and event.msg.msg_id == msg_id)) then
+		if (msg_id == nil or (type(event.msg)=="table" and type(event.msg.msg_id) ~= "string" and event.msg.msg_id == msg_id)) then
 	--		print("callback "..msg_id)
-	--		result = event 
-	--	end
-		result = event
+			result = event 
+		end
+	--	result = event
 		return event
 	end
 	--print("#$#######################################################################################")
