@@ -243,7 +243,7 @@ function dronetest.generate_line(s, ypos)
 	local i = 1
 	local parsed = {}
 	local width = 0
-	
+	s = string.format("%s",s);
 	local chars = 0
 	while chars < max_chars and i <= #s do
 		local file = nil
@@ -254,7 +254,7 @@ function dronetest.generate_line(s, ypos)
 			file = charmap[s:sub(i, i + 1)]
 			i = i + 2
 		else
-			print("[dronetest] W: unknown symbol in '"..s.."' at "..i)
+			print("[dronetest_display] WARNING: unknown symbol in '"..s.."' at "..i)
 			i = i + 1
 		end
 		if file ~= nil then
