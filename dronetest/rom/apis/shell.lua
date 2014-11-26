@@ -75,7 +75,6 @@ function shell.main()
 	end
 	local listener = dronetest.events.register_listener(sys.id,{"key"},func)
 	local lfunc = function(event) 
-	_print("direct command: "..event.msg)
 		table.insert(buffer,event.msg)
 	end
 	local line_listener = dronetest.events.register_listener(sys.id,{"input"},lfunc)

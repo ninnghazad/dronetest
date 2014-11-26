@@ -38,6 +38,9 @@ local posMax = {x=radius,y=0,z=radius}
 
 local channel = "dronetest:drone:"..droneid
 local drone = peripheral.wrap(channel)
+if drone == nil then
+	return
+end
 local inv = minetest.get_inventory({type="detached",name="dronetest_drone_"..droneid})
 local invSize = inv:get_size("main")
 local doBackfill = nil
@@ -50,6 +53,10 @@ local x,y,z,r
 local startTime = sys.time()/20
 local start = 0 
 local pos = dronetest.drones[droneid].object:getpos()
+if pos == nil then
+	print("Drone seems to be in unloaded area.")
+	return
+end
 local startPos = table.copy(pos)
 local dir = dronetest.yaw2dir(dronetest.snapRotation(dronetest.drones[droneid].object:getyaw()))
 local startDir = dir

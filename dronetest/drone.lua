@@ -573,6 +573,9 @@ function drone.on_digiline_receive_line(self, channel, msg, senderPos)
 			-- execute function
 			--local id = self.id
 			--local function rprint(m) msg.print("drone #"..id..": "..m) end
+			local pos = self.object:getpos()
+			if pos == nil or self.removed then error("lost contact") end
+
 			local response = {dronetest.drone_actions[msg.action].func(self,msg.print,msg.argv[1],msg.argv[2],msg.argv[3],msg.argv[4],msg.argv[5])}
 			--local response = {true}
 --			print("drone #"..self.id.." finished action '"..msg.action.."': "..dump(response))
