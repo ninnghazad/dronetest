@@ -102,47 +102,18 @@ local function get_blockpos(pos)
 end
 
 function drone_move_to_pos(drone,target)
-	local result,reason = drone_check_target(target)
 	local node = minetest.get_node(target)
 	local pos = drone.object:getpos()	
 	--print("moveto: "..node.name.." "..dump(result).." "..dump(reason).." "..minetest.hash_node_position(get_blockpos(pos)))
-	local ticket = nil
 	
+	-- Get a fresh ticket to have out target forceloaded
+	local ticket = nil
 	if minetest.hash_node_position(get_blockpos(target)) ~= minetest.hash_node_position(get_blockpos(pos)) or node.name == "ignore" then
-		print("FORCELOAD LOAD: "..minetest.hash_node_position(get_blockpos(target)))
-		--[[local r = minetest.forceload_block(target)
-		coroutine.yield() -- give chance to load block
-		while not r do 
-			print("FORCELOAD ERROR, COULD NOT FORCE "..node.name) 
-			r = minetest.forceload_block(target)
-			dronetest.sleep(1)
-			node = minetest.get_node(target)
-			if node.name ~= "ignore" then
-				break
-			end
-		end
-		print("node: "..node.name)
-		
-		--]]
-		
 		ticket = dronetest.force_loader.register_ticket(target)
 	end
-	-- hm... shouldn't this work?
-	if minetest.get_node(target).name == "ignore" then
-		while minetest.get_node(target).name == "ignore" do
-			local bmin,bmax = {},{}
-			bmin.x = math.min(pos.x,target.x) - 1
-			bmin.y = math.min(pos.y,target.y) - 1
-			bmin.z = math.min(pos.z,target.z) - 1
-			bmax.x = math.max(pos.x,target.x) + 1
-			bmax.y = math.max(pos.y,target.y) + 1
-			bmax.z = math.max(pos.z,target.z) + 1
-			local v=VoxelManip():read_from_map(bmin,bmax)
-			print("waiting for block to load @ "..target.x..","..target.y..","..target.z.." ("..minetest.hash_node_position(get_blockpos(target)).."): "..dump(v).." "..dump({bmin,bmax}))
-			coroutine.yield() -- give chance to load block
-		end
-		print("ok, waited")
-	end
+	
+	local result,reason = drone_check_target(target)
+	
 	if not result then return result,reason end
 	
 	local dir = target
@@ -158,10 +129,13 @@ function drone_move_to_pos(drone,target)
 		drone.object:moveto(pos,true)
 		coroutine.yield()
 	end
+	
+	-- Free old and set new ticket
 	if ticket ~= nil then
-		print("FORCELOAD FREE: "..minetest.hash_node_position(get_blockpos(old)))
-		dronetest.force_loader.unregister_ticket(drone.ticket)
-		drone.ticket = ticket
+		if drone.ticket ~= nil then
+			dronetest.force_loader.unregister_ticket(drone.ticket)
+		end
+		drone.ticket = table.copy( ticket )
 	end
 	return true
 end

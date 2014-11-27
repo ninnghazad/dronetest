@@ -60,7 +60,7 @@ dofile(dronetest.mod_dir.."/drone.lua")
 dofile(dronetest.mod_dir.."/craft.lua")
 
 dronetest.force_loader.load()
-dronetest.force_loader.update()
+
 
 -- Some message that the mod has loaded/unloaded
 if minetest.setting_getbool("log_mods") then
