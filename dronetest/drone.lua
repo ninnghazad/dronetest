@@ -114,7 +114,10 @@ function drone_move_to_pos(drone,target)
 	
 	local result,reason = drone_check_target(target)
 	
-	if not result then return result,reason end
+	if not result then 
+		dronetest.force_loader.unregister_ticket(ticket)
+		return result,reason 
+	end
 	
 	local dir = target
 	dir.x = dir.x - pos.x
@@ -375,7 +378,9 @@ function drone_place(drone,target,slot)
 	slot = tonumber(slot)
 	local stack = inv:get_stack("main",slot)
 	if stack == nil or stack:is_empty() then return nil end
-	print("drone_place: "..slot.." # "..stack:get_name()..dump(target))
+	
+	dronetest.log("drone_place: "..slot.." # "..stack:get_name())
+	
 	if stack:get_name() == "ignore" then error("AAAAAAAAAAAARG") end
 	minetest.set_node(target,{name=stack:get_name()})
 	stack:take_item(1)
@@ -447,7 +452,7 @@ dronetest.drone_actions = {
 		end},
 	place = {desc="Places stuff from inventory in front of drone.",func=function(drone,print,slot) 
 		local target = drone_get_forward(drone)
-		_print("place!"..dump(target))
+		--_print("place!"..dump(target))
 		return drone_place(drone,target,slot)
 	end},
 	placeUp = {desc="Places stuff from inventory above drone.",func=function(drone,print,slot) 
@@ -456,7 +461,7 @@ dronetest.drone_actions = {
 	end},
 	placeDown = {desc="Places stuff from inventory below drone.",func=function(drone,print,slot) 
 		local target = drone_get_down(drone)
-		_print("placedown!")
+		--_print("placedown!")
 		return drone_place(drone,target,slot)
 	end},
 	drop = {desc="Drop.",func=function(drone,print,slot,amount) 

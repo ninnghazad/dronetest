@@ -196,7 +196,7 @@ function digTo(target,pickup)
 				local d = minetest.registered_nodes[digged].drop
 				if d == nil then d = digged end
 				local slot = drone.findInInventory(d)
-			--	print("BACKFILL: "..digged) -- .." "..dump(slot).." "..inv:get_stack("main",slot):get_name().." "..inv:get_stack("main",slot):get_count())
+				print("BACKFILL: "..digged.." in "..dump(slot))
 				if slot then
 					doBackfill_slot = slot
 					doBackfill = function(dir)

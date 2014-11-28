@@ -16,8 +16,8 @@ local function shakeit(channel)
 		end
 		drone.dig()
 		drone.forward()
-		print("IMMA WANDER OFF! ")
-		sleep(1)
+		--print("IMMA WANDER OFF! ")
+		--sleep(1)
 	end
 end
 
