@@ -1,0 +1,33 @@
+-- jit.off(true) -- no effect?
+local peripheral = sys.loadApi("peripheral")
+
+local function shakeit(channel)
+	local drone = peripheral.wrap(channel)
+	if drone == nil then return end
+	print("DRONE "..channel..": I don't think i will ever come back.")
+	local r
+	while true do
+		--print("### 0 "..sys.id.." "..getId())
+		sys.yield()
+
+		if sys:receiveEvent({"key"}) ~= nil then
+			print("RECEIVED INPUT, ABORT EPIC MOVES NOW!")
+			break
+		end
+		drone.dig()
+		drone.forward()
+		--print("IMMA WANDER OFF! ")
+		--sleep(1)
+	end
+end
+
+
+function f1() shakeit("dronetest:drone:1") end
+
+local c1 = coroutine.create(f1)
+while coroutine.status(c1) == "suspended" do
+	coroutine.resume(c1)
+end
+
+print("GOODBYE!!!!")
+return true

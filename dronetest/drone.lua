@@ -36,6 +36,7 @@ local drone = {
 	id = 0,
 	status = 0,
         removed = false,
+	ticket = nil
 }
 
 function drone.on_rightclick(self, clicker)
@@ -101,35 +102,22 @@ local function get_blockpos(pos)
 end
 
 function drone_move_to_pos(drone,target)
-	local result,reason = drone_check_target(target)
 	local node = minetest.get_node(target)
 	local pos = drone.object:getpos()	
 	--print("moveto: "..node.name.." "..dump(result).." "..dump(reason).." "..minetest.hash_node_position(get_blockpos(pos)))
 	
-	local forceloaded = false
+	-- Get a fresh ticket to have out target forceloaded
+	local ticket = nil
 	if minetest.hash_node_position(get_blockpos(target)) ~= minetest.hash_node_position(get_blockpos(pos)) or node.name == "ignore" then
-		print("FORCELOAD LOAD: "..minetest.hash_node_position(get_blockpos(target)))
-		local r = minetest.forceload_block(target)
-		if not r then print("FORCELOAD ERROR, COULD NOT FORCE") end
-		forceloaded = true
-		coroutine.yield() -- give chance to load block
+		ticket = dronetest.force_loader.register_ticket(target)
 	end
-	if minetest.get_node(target).name == "ignore" then
-		while minetest.get_node(target).name == "ignore" do
-			local bmin,bmax = {},{}
-			bmin.x = math.min(pos.x,target.x) - 1
-			bmin.y = math.min(pos.y,target.y) - 1
-			bmin.z = math.min(pos.z,target.z) - 1
-			bmax.x = math.max(pos.x,target.x) + 1
-			bmax.y = math.max(pos.y,target.y) + 1
-			bmax.z = math.max(pos.z,target.z) + 1
-			local v=VoxelManip():read_from_map(bmin,bmax)
-			print("waiting for block to load @ "..target.x..","..target.y..","..target.z.." ("..minetest.hash_node_position(get_blockpos(target)).."): "..dump(v).." "..dump({bmin,bmax}))
-			coroutine.yield() -- give chance to load block
-		end
-		print("ok, waited")
+	
+	local result,reason = drone_check_target(target)
+	
+	if not result then 
+		dronetest.force_loader.unregister_ticket(ticket)
+		return result,reason 
 	end
-	if not result then return result,reason end
 	
 	local dir = target
 	dir.x = dir.x - pos.x
@@ -144,9 +132,13 @@ function drone_move_to_pos(drone,target)
 		drone.object:moveto(pos,true)
 		coroutine.yield()
 	end
-	if forceloaded then
-		print("FORCELOAD FREE: "..minetest.hash_node_position(get_blockpos(old)))
-		minetest.forceload_free_block(old)
+	
+	-- Free old and set new ticket
+	if ticket ~= nil then
+		if drone.ticket ~= nil then
+			dronetest.force_loader.unregister_ticket(drone.ticket)
+		end
+		drone.ticket = table.copy( ticket )
 	end
 	return true
 end
@@ -386,7 +378,9 @@ function drone_place(drone,target,slot)
 	slot = tonumber(slot)
 	local stack = inv:get_stack("main",slot)
 	if stack == nil or stack:is_empty() then return nil end
-	print("drone_place: "..slot.." # "..stack:get_name()..dump(target))
+	
+	dronetest.log("drone_place: "..slot.." # "..stack:get_name())
+	
 	if stack:get_name() == "ignore" then error("AAAAAAAAAAAARG") end
 	minetest.set_node(target,{name=stack:get_name()})
 	stack:take_item(1)
@@ -458,7 +452,7 @@ dronetest.drone_actions = {
 		end},
 	place = {desc="Places stuff from inventory in front of drone.",func=function(drone,print,slot) 
 		local target = drone_get_forward(drone)
-		_print("place!"..dump(target))
+		--_print("place!"..dump(target))
 		return drone_place(drone,target,slot)
 	end},
 	placeUp = {desc="Places stuff from inventory above drone.",func=function(drone,print,slot) 
@@ -467,7 +461,7 @@ dronetest.drone_actions = {
 	end},
 	placeDown = {desc="Places stuff from inventory below drone.",func=function(drone,print,slot) 
 		local target = drone_get_down(drone)
-		_print("placedown!")
+		--_print("placedown!")
 		return drone_place(drone,target,slot)
 	end},
 	drop = {desc="Drop.",func=function(drone,print,slot,amount) 
@@ -573,6 +567,9 @@ function drone.on_digiline_receive_line(self, channel, msg, senderPos)
 			-- execute function
 			--local id = self.id
 			--local function rprint(m) msg.print("drone #"..id..": "..m) end
+			local pos = self.object:getpos()
+			if pos == nil or self.removed then error("lost contact") return end
+
 			local response = {dronetest.drone_actions[msg.action].func(self,msg.print,msg.argv[1],msg.argv[2],msg.argv[3],msg.argv[4],msg.argv[5])}
 			--local response = {true}
 --			print("drone #"..self.id.." finished action '"..msg.action.."': "..dump(response))
@@ -622,6 +619,7 @@ function drone.on_activate(self, staticdata, dtime_s)
 		self.status = 0
 		self.yaw = 0
 		self.channel = "dronetest:drone:"..self.id
+		
 		print("activate drone "..self.id.." ..")
 		dronetest.save()
 	--	minetest.add_node(pos,"dronetest:drone_virtual")
@@ -651,7 +649,7 @@ function drone.on_activate(self, staticdata, dtime_s)
 	self.object:setyaw(dronetest.snapRotation(self.yaw))
 	--print("Add drone "..self.id.." to list.")
 	
-	
+	self.ticket = dronetest.force_loader.register_ticket(pos)
 	-- TODO: we need to somehow remove these when drones get removed, but there is no on_deactivate handler yet i think
 	--table.insert(dronetest.drones,self.id,self)
 	dronetest.save()
@@ -671,6 +669,7 @@ function drone.on_punch(self, puncher, time_from_last_punch, tool_capabilities, 
 	        return
         end
 	print("remove drone")
+	dronetest.force_loader.unregister_ticket(self.ticket)
 	dronetest.drones[self.id] = nil
 	self.object:remove()
 	self = nil

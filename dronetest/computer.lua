@@ -5,7 +5,7 @@ local function get_computer_formspec(id,channel)
 --		default.gui_bg..
 --		default.gui_bg_img..
 --		default.gui_slots..
-		"proxy[0.3,0.4;1,1;proxy;keyboard.png;keyboardActive.png]"..
+		"keyeventbox[0.3,0.4;1,1;proxy;keyboard.png;keyboardActive.png]"..
 		"field[1.3,0.7;6,1;input;;]"..
 		"field[7.3,0.7;2,1;channel;channel;"..channel.."]"..
 		"button[9,0.4;1,1;execute;EXE]"..
@@ -24,17 +24,31 @@ local function redraw_computer_formspec(pos,player)
 --	minetest.show_formspec(player:get_player_name(),"dronetest:computer",formspec)
 end
 
-function dronetest.print(id,msg)
+function dronetest.print(id,msg,nonewline)
+	if nonewline == nil then nonewline = false end
 	if msg == nil then
 		return
 	end
 	if dronetest.console_histories[id] == nil then
 		dronetest.console_histories[id] = ""
 	end
-	dronetest.console_histories[id] = dronetest.console_histories[id]..msg.."\n"
+	if nonewline then
+		dronetest.console_histories[id] = dronetest.console_histories[id]..msg
+	else
+		dronetest.console_histories[id] = dronetest.console_histories[id]..msg.."\n"
+	end
+	
+	-- apply eventual '\b's before sending to display ?!
+	dronetest.console_histories[id] = string.format("%s",dronetest.console_histories[id])
+	if string.find(dronetest.console_histories[id],"\b") then
+		print("found backspace in '"..dronetest.console_histories[id].."'")
+		dronetest.console_histories[id] = dronetest.console_histories[id]:gsub("(.\b)","")
+		print("replaced backspace in '"..dronetest.console_histories[id].."'")
+	end 
 	
 	if string.len(dronetest.console_histories[id]) > 4096 then dronetest.console_histories[id] = string.sub(dronetest.console_histories[id],string.len(dronetest.console_histories[id])-4096) end
 	
+	-- update display, not quite as it should be
 	if dronetest.active_systems[id] ~= nil then
 		-- TODO: limit updates per second
 		local channel = minetest.get_meta(dronetest.active_systems[id].pos):get_string("channel")
@@ -107,13 +121,14 @@ local function activate_by_id(id,t,pos)
 	local cr = coroutine.create(function() xpcall(bootstrap,error_handler) end)
 	--debug.sethook(cr,function () coroutine.yield() end,"",100)
 	
-	dronetest.active_systems[id] = {coroutine_handle = cr,events = {},type=t,id=id,pos=pos,last_update = minetest.get_gametime()}
+	dronetest.active_systems[id] = {coroutine_handle = cr,events = {},type=t,id=id,pos=pos,last_update = minetest.get_gametime(),ticket = dronetest.force_loader.register_ticket(pos)}
 	
 	dronetest.log("STATUS: "..coroutine.status(dronetest.active_systems[id].coroutine_handle))
 	dronetest.log("TYPE: "..type(dronetest.active_systems[id]))
 
 	dronetest.log("System #"..id.." has been activated, now "..dronetest.count(dronetest.active_systems).." systems active.")
 	dronetest.print(id,"System #"..id.." has been activated.")
+	
 	return true
 end
 local function activate(pos)
@@ -126,6 +141,7 @@ end
 local function deactivate_by_id(id)
 	
 	dronetest.print(id,"System #"..id.." deactivating.")
+	dronetest.force_loader.unregister_ticket(dronetest.active_systems[id].ticket)
 	dronetest.active_systems[id] = nil
 	dronetest.log("System #"..id.." has been deactivated.")
 	
@@ -254,6 +270,7 @@ minetest.register_node("dronetest:computer", {
 			return true
 		elseif fields["proxy"] ~= nil and fields["proxy"] ~= "" then
 			print("received keyboard event through proxy: "..fields["proxy"])
+			dronetest.events.send_by_id(id,{type="key",msg={msg=fields["proxy"],msg_id=0}})
 			return true
 		end
 		

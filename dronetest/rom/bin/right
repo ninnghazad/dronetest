@@ -1,5 +1,11 @@
+
+
+
+local droneid = tonumber(argv[1])
+local channel = "dronetest:drone:"..droneid
+local drone = peripheral.wrap(channel)
 if drone == nil then
-	print("this program can only run on drones.")
+	print("Could not wrap drone.")
 	return false
 end
 

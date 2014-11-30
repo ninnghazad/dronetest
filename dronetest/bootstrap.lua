@@ -42,12 +42,18 @@ sys.id = id
 if not fs.isDir("./") then fs.makeDir("./") end
 
 print("Finished booting #"..sys.id..", dropping to shell.")
+
 -- Clear screen
 --term.clear()
+
 
 if fs.isFile("startup") then
 	shell.run("startup")
 end
+
+shell.main()
+--shell.run("quarry",{1,1,1})
+--[[
 local event = nil
 while true do
 	event = sys:receiveEvent({"input"})
@@ -65,5 +71,6 @@ while true do
 	end
 	sys.yield()
 end
+--]]
 
 return true

@@ -61,6 +61,12 @@ dronetest.sys.loadApi = function(name)
 	--env_save.dronetest = getfenv(0).dronetest
 	env_save.sys = getfenv(2).sys
 	env_save.print = function(msg) dronetest.print(env_save.sys.id,msg) end
+	-- Link main object back into environment, so APIs can access all they need
+	-- just until we have electrodude's new loader-stuff
+	env_save.dronetest = dronetest
+	--env_save.console_histories = dronetest.console_histories
+	
+	
 	setfenv(api,env_save)
 	return api()
 end
