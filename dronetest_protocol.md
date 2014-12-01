@@ -203,7 +203,7 @@ Same as the packet that was sent, but the data field is omitted.  The id field i
 * `<connection handle>`: connection handle (optional)
 * `<data>`: data being sent
 
-The `connection handle>` field should be left out for transfer of connectionless data.  
+The `<connection handle>` field should be left out for transfer of connectionless data.  
 
 ### send_ack
 #### success:
@@ -228,7 +228,7 @@ The `connection handle>` field should be left out for transfer of connectionless
 }
 ```
 * `<connection handle>`: connection handle (not present if it wasn't present in the request)
-* `error message>`:
+* `<error message>`:
   * "missing_fields": no authorization, missing connection handle (when necessary), etc.  
   * "bad_auth": authorization failed
   * "invalid": invalid/already closed connection
