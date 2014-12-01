@@ -69,7 +69,7 @@ Devices should ignore any request so malformed that they can not reply with an u
 }
 ```
 
-* <node id>: Node/item id of the responding node (e.g. "dronetest:computer").  May be faked, e.g. if a computer is pretending to be a peripheral (NFS, remote login, general mischief, etc.).  
+* `<node id>`: Node/item id of the responding node (e.g. "dronetest:computer").  May be faked, e.g. if a computer is pretending to be a peripheral (NFS, remote login, general mischief, etc.).  
 
 
 ## put
@@ -81,8 +81,8 @@ Devices should ignore any request so malformed that they can not reply with an u
 }
 ```
 
-* <object identifier>: Identifies the object.  See "Object Identifiers" below.  
-* <data>: Data being put.  May be of any type, but the receiver may reject certain types.
+* `<object identifier>`: Identifies the object.  See "Object Identifiers" below.  
+* `<data>`: Data being put.  May be of any type, but the receiver may reject certain types.
 
 ### put_ack
 #### success:
@@ -93,7 +93,7 @@ Devices should ignore any request so malformed that they can not reply with an u
 	id = <object identifier>,
 }
 ```
-* <object identifier>: Identifies the object.  See "Object Identifiers" below.  
+* `<object identifier>`: Identifies the object.  See "Object Identifiers" below.  
 
 Same as the packet that was sent, but the data field is omitted.  The id field is included to differentiate multiple requests that may be out to a device at once.  
 
@@ -106,8 +106,8 @@ Same as the packet that was sent, but the data field is omitted.  The id field i
 	error = <error message>,
 }
 ```
-* <object identifier>: Identifies the object.  See "Object Identifiers" below.  
-* <error message>: 
+* `<object identifier>`: Identifies the object.  See "Object Identifiers" below.  
+* `<error message>`: 
   * "missing_fields": missing authorization (authorization should be its own field)
   * "bad_auth": authorization failed
   * "bad_id": bad object identifier
@@ -127,8 +127,8 @@ Same as the packet that was sent, but the data field is omitted.  The id field i
 }
 ```
 
-* <object identifier>: Identifies the object.  See "Object Identifiers" below.  
-* <datatype n>: Preferred data type (e.g. string or table).  May be list of strings, 
+* `<object identifier>`: Identifies the object.  See "Object Identifiers" below.  
+* `<datatype n>`: Preferred data type (e.g. string or table).  May be list of strings, 
 
 ### get_ack
 #### success:
@@ -140,19 +140,19 @@ Same as the packet that was sent, but the data field is omitted.  The id field i
 	data = <data>,
 }
 ```
-* <data>: Returned data.  May be of a type other than that requested if data of the type requested was not available.  
-* <object identifier>: Included to differentiate multiple requests that may be out to a device at once.  See "Object Identifiers" below.  
+* `<data>`: Returned data.  May be of a type other than that requested if data of the type requested was not available.  
+* `<object identifier>`: Included to differentiate multiple requests that may be out to a device at once.  See "Object Identifiers" below.  
 
 #### failure:
 ```
 {
 	type = "get_ack",
 	success = false,
-	id = <object identifier>,
-	error = <error message>,
+	id = `<object identifier>`,
+	error = `<error message>`,
 }
 ```
-* <error message>: 
+* `<error message>`: 
   * "missing_fields": missing authorization (authorization should be its own field)
   * "bad_auth": authorization failed
   * "bad_id": bad object identifier
@@ -164,7 +164,7 @@ Same as the packet that was sent, but the data field is omitted.  The id field i
 	id = <object identifier>,
 }
 ```
-* <object identifier>: Identifies the connection being opened and its purpose.  See "Object Identifiers" below.  
+* `<object identifier>`: Identifies the connection being opened and its purpose.  See "Object Identifiers" below.  
 
 ### open_ack
 #### success:
@@ -176,7 +176,7 @@ Same as the packet that was sent, but the data field is omitted.  The id field i
 	cid = <connection handle>,
 }
 ```
-* <connection handle>: Connection handle, unique to the responding device, must be different from <object identifier>, may be a number or a string
+* `<connection handle>`: Connection handle, unique to the responding device, must be different from `<object identifier>`, may be a number or a string
 
 #### failure:
 ```
@@ -187,8 +187,8 @@ Same as the packet that was sent, but the data field is omitted.  The id field i
 	error = "<error message>,
 }
 ```
-* <object identifier>: Identifies which request this is in response to.  See "Object Identifiers" below.  
-* <error message>:
+* `<object identifier>`: Identifies which request this is in response to.  See "Object Identifiers" below.  
+* `<error message>`:
   * "missing_fields": missing authorization (authorization should be its own field)
   * "bad_auth": authorization failed
 
@@ -200,10 +200,10 @@ Same as the packet that was sent, but the data field is omitted.  The id field i
 	data = <data>,
 }
 ```
-* <connection handle>: connection handle (optional)
-* <data>: data being sent
+* `<connection handle>`: connection handle (optional)
+* `<data>`: data being sent
 
-The <connection handle> field should be left out for connectionless data.  
+The `connection handle>` field should be left out for transfer of connectionless data.  
 
 ### send_ack
 #### success:
@@ -215,8 +215,8 @@ The <connection handle> field should be left out for connectionless data.
 	data = <data>,
 }
 ```
-* <connection handle>: connection handle (not present if it wasn't present in the request)
-* <data>: copy of data being sent
+* `<connection handle>`: connection handle (not present if it wasn't present in the request)
+* `<data>`: copy of data being sent
 
 #### failure:
 ```
@@ -227,8 +227,8 @@ The <connection handle> field should be left out for connectionless data.
 	error = "<error message>,
 }
 ```
-* <connection handle>: connection handle (not present if it wasn't present in the request)
-* <error message>:
+* `<connection handle>`: connection handle (not present if it wasn't present in the request)
+* `error message>`:
   * "missing_fields": no authorization, missing connection handle (when necessary), etc.  
   * "bad_auth": authorization failed
   * "invalid": invalid/already closed connection
@@ -241,7 +241,7 @@ The <connection handle> field should be left out for connectionless data.
 	id = <connection handle>,
 }
 ```
-* <connection handle>: connection handle to be closed
+* `<connection handle>`: connection handle to be closed
 
 ### close_ack
 #### success:
@@ -253,8 +253,8 @@ The <connection handle> field should be left out for connectionless data.
 	cid = <connection handle>,
 }
 ```
-* <object identifier>: Identifies the connection being opened and its purpose.  See "Object Identifiers" below.  
-* <connection handle>: Connection handle
+* `<object identifier>`: Identifies the connection being opened and its purpose.  See "Object Identifiers" below.  
+* `<connection handle>`: Connection handle
 
 #### failure:
 ```
@@ -265,8 +265,8 @@ The <connection handle> field should be left out for connectionless data.
 	error = "<error message>,
 }
 ```
-* <connection handle>: Connection handle
-* <error message>:
+* `<connection handle>`: Connection handle
+* `<error message>`:
   * "missing_fields": no authorization, missing connection handle, etc.  
   * "bad_auth": authorization failed
   * "invalid": invalid/already closed connection
