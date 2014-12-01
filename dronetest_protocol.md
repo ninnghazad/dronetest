@@ -128,7 +128,7 @@ Same as the packet that was sent, but the data field is omitted.  The id field i
 ```
 
 * `<object identifier>`: Identifies the object.  See "Object Identifiers" below.  
-* `<datatype n>`: Preferred data type (e.g. string or table).  May be list of strings, 
+* `<datatype n>`: Preferred data type (e.g. string or table).  This is in a list so multiple can be specified.  
 
 ### get_ack
 #### success:
