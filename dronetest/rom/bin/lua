@@ -1,7 +1,7 @@
 local env = setmetatable({}, {__index = _G})
 
 function env.quit()
-
+	-- TODO
 end
 
 local function processInput(msg)

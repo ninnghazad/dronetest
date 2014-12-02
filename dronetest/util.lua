@@ -36,7 +36,7 @@ function is_filename_in_sandbox(filename, sandbox)
 end
 function readFile(file, sandbox)
 	if not is_filename_in_sandbox(file, sandbox) then
-		dronetest.log("readFile: "..dump(file).." is not a legal filename.")
+		dronetest.log("readFile: "..dump(file).." is not inside sandbox "..sandbox)
 		return
 	end
 	local f = io.open(file, "rb")
@@ -75,23 +75,39 @@ function count(t)
 end
 dronetest.count = count
 
-local function sandbox(x, env)
-	if type(x) == "table" then
-		for k,v in pairs(x) do
-			x[k] = sandbox(v, env)
-		end
-	elseif type(x) == "function" then
-		return setfenv(function(...) return x(...) end, env)
-	else
-		return x
+function sandboxfunc(x, env, seen, dest)	-- DEPRECATED - sandboxfunc(x, env, seen, dest) === table.copy(x, true, env, seen, dest)
+	env = env or {}
+	seen = seen or {}
+	local result
+	if seen[x] then
+		return seen[x]
 	end
+
+	if type(x) == "table" then
+		result = dest or {}
+		seen[x] = result
+		for k,v in pairs(x) do
+			result[k] = sandboxfunc(v, env, seen)
+		end
+		return result
+	elseif type(x) == "function" then
+		result = setfenv(function(...) return x(...) end, env)
+	else
+		result = x
+	end
+
+	seen[x] = result
+
+	return result
+
 end
-function table.copy(t, deep, safeenv, seen)
+
+function table.copy(t, deep, safeenv, seen, dest)
     seen = seen or {}
     if t == nil then return nil end
     if seen[t] then return seen[t] end
 
-    local nt = {}
+    local nt = dest or {}
     for k, v in pairs(t) do
         if deep and type(v) == 'table' then
             nt[k] = table.copy(v, deep, safeenv, seen)

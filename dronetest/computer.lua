@@ -92,25 +92,16 @@ local function activate_by_id(id,t,pos)
 	if pos == nil then pos = {x=0,y=0,z=0} end
 	if t == nil then t = "drone" end
 	-- http://lua-users.org/wiki/SandBoxes
-	local env = table.copy(dronetest.userspace_environment)
-	env.getId = function() return id end
+	--local env = table.copy(dronetest.userspace_environment)
+	local env = dronetest.mkenv(id)
 	
-	env.sys = table.copy(dronetest.sys)
-	-- HORRIBLE PLACE TO PUT ID
-	env.sys.id = 1+id-1
-	-- HORRIBLE PLACE TO PUT SANDBOX PATH
-	env.sys.sandbox = env.mod_dir.."/"..id
 	local meta = minetest.get_meta(pos)
-	env.sys.channel = meta:get_string("channel")
-	env.sys.type = t
-	
-	-- overload print function to print to drone/computer's screen and not to servers stdout
-	env.print = function(msg) dronetest.print(id,msg) end
+	env.sys = dronetest.mksys(env, id, meta:get_string("channel"), t, dronetest.mod_dir.."/"..id)
 
 	local bootstrap,err = loadstring(dronetest.bootstrap)
 	if type(bootstrap) ~= "function" then minetest.log("error","bad bootstrap: "..err) error("bad bootstrap: "..err) end
 	
-	env._G = env
+	--env._G = env
 	jit.off(bootstrap,true)
 	setfenv(bootstrap,env)
 	function error_handler(err)

@@ -33,7 +33,7 @@ shell = sys.loadApi("shell")
 -- print environment as it is right now.
 -- lets leave this in for a while for debugging
 for i,v in pairs(_G) do
-	print("bootstrap env: "..i.." ("..type(v)..")")
+	--print("bootstrap env: "..i.." ("..type(v)..")")
 end
 
 local id = getId()

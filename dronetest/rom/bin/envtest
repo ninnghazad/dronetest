@@ -1,0 +1,33 @@
+local function fmt(t)
+	if type(t) == "string" then
+		return string.format("%q", t)
+	elseif type(t) == "number" or type(t) == "boolean" then
+		return tostring(t)
+	else
+		return string.format("<%s>", tostring(t))
+	end
+end
+
+local seen = {}
+local function r(t, path)
+	if not t then
+		return
+	end
+	if seen[t] then
+		return
+	end
+	seen[t] = path
+	rprint(tostring(path).." = "..fmt(t))	-- print'ing too much stuff throws a C++ exception and crashes minetest!!!
+	if type(t) == "table" then
+		for k,v in pairs(t) do
+			--r(k, path..string.format("[%q]", k))
+			r(v, path..string.format("[%s]", fmt(k)))
+		end
+		r(getmetatable(t), string.format("getmetatable(%s)", path))
+	elseif type(t) == "function" then
+		r(getfenv(t), string.format("getfenv(%s)", path))
+	end
+	coroutine.yield()
+end
+
+r(_G, "_G")
