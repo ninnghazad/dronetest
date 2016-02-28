@@ -6,15 +6,6 @@ Licensed under NOTHING.
 ****
 --]]
 
-
-
-if minetest.setting_getbool("log_mods") then
-	minetest.log("action", "[MOD] "..mod_name.." -- loading from "..mod_dir)
-	minetest.register_on_shutdown(function() minetest.log("action", "[MOD] "..mod_name.." -- unloading ...") end)
-end
-
-
-
 --Global config and function table.
 dronetest = {
 	last_id = 0,
@@ -39,7 +30,13 @@ dronetest = {
 		max_userspace_instructions = "How many instructions may a player execute on a system without yielding?",
 	},
 }
-	
+
+
+if minetest.setting_getbool("log_mods") then
+	minetest.log("[MOD] "..dronetest.mod_name.." -- loading from "..dronetest.mod_dir)
+	minetest.register_on_shutdown(function() minetest.log("[MOD] "..dronetest.mod_name.." -- unloading ...") end)
+end
+
 -- include Lua File System, not sure if more versions are needed, this is linux64 and win32 i think
 package.cpath = package.cpath
 	.. ";" .. dronetest.mod_dir .. "/lfs.so"
@@ -61,10 +58,11 @@ dofile(dronetest.mod_dir.."/craft.lua")
 
 dronetest.force_loader.load()
 
+minetest.log("[MOD] "..minetest.get_current_modname().." -- last_id: "..dronetest.last_id)
 
 -- Some message that the mod has loaded/unloaded
 if minetest.setting_getbool("log_mods") then
-	minetest.register_on_shutdown(function() minetest.log("action", "[MOD] "..mod_name.." -- unloaded!") end)
-	minetest.log("action","[MOD] "..minetest.get_current_modname().." -- loaded!")
+	minetest.register_on_shutdown(function() minetest.log("action", "[MOD] "..dronetest.mod_name.." -- unloaded!") end)
+	minetest.log("[MOD] "..minetest.get_current_modname().." -- loaded!")
 end
 

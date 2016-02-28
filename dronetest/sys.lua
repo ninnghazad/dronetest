@@ -28,6 +28,11 @@ function dronetest.sys:waitForDigilineMessage(channel,msg_id,timeout)
 	if e == nil then return nil end
 	return e.msg
 end
+function dronetest.sys:init()
+	-- make sure there are no old listeners left after a crash/restart
+	dronetest.events.unregister_listeners(self.id)
+	return true
+end
 
 function dronetest.sys:getUniqueId(event)
 	self.last_msg_id = self.last_msg_id + 1
@@ -35,8 +40,6 @@ function dronetest.sys:getUniqueId(event)
 end
 
 -- Gets an API as a string, used only wrapped in bootstrap.lua
--- TODO: is it possible to overload this from userspace? make sure it isn't
---  electrodude's comment: who cares if it is?  If they overload it, they just can't load APIs anymore.  Their loss.
 local function getApi(name, sandbox)
 	local api = readFile(dronetest.mod_dir.."/rom/apis/"..name..".lua", sandbox)
 	local err = ""
@@ -46,7 +49,8 @@ local function getApi(name, sandbox)
 	return api
 end
 
-dronetest.sys.loadApi = function(name)
+function dronetest.sys:loadApi(name)
+	print(self.id.." loads api '"..name.."'")
 	local api = getApi(name, dronetest.sys.sandbox)
 	local env_save = table.copy(dronetest.userspace_environment)
 	local env_global = getfenv(api)
@@ -58,15 +62,9 @@ dronetest.sys.loadApi = function(name)
 	end
 	
 	-- Make drone/computer's env available to APIs, with id and stuff
-	--env_save.dronetest = getfenv(0).dronetest
 	env_save.sys = getfenv(2).sys
 	env_save.print = function(msg) dronetest.print(env_save.sys.id,msg) end
-	-- Link main object back into environment, so APIs can access all they need
-	-- just until we have electrodude's new loader-stuff
 	env_save.dronetest = dronetest
-	--env_save.console_histories = dronetest.console_histories
-	
-	
 	setfenv(api,env_save)
 	return api()
 end

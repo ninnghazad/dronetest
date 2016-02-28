@@ -44,7 +44,7 @@ end
 
 
 dronetest.save = function ()
-	saveConfig(dronetest.mod_dir.."/config.txt", dronetest, doc)
+	saveConfig(dronetest.mod_dir.."/config.txt", dronetest, dronetest.doc)
 end
 
 minetest.register_on_shutdown(dronetest.save)

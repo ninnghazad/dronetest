@@ -36,11 +36,13 @@ local function processInput(msg)
 end
 
 local event = nil
+print("now listening for input!")
 while true do
 	event = sys:receiveEvent({"input"})
+	print("receive: "..dump(event))
 	if event ~= nil then
 		if event.type == "input" then
-		--	print(sys.id.." received input: "..dump(event.msg))
+			print(sys.id.." received input: "..dump(event.msg))
 			if type(event.msg) ~= "string" or event.msg == "" then
 				print("$")
 			elseif not processInput(event.msg) then 

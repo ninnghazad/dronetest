@@ -17,27 +17,30 @@ end
 
 print("System #"..(sys.id).." is booting!")
 -- Load the APIs
-coroutine    = sys.loadApi("coroutine")
-os    = sys.loadApi("os")
-fs    = sys.loadApi("fs")
-term  = sys.loadApi("term")
-peripheral = sys.loadApi("peripheral")
+coroutine    = sys:loadApi("coroutine")
+os    = sys:loadApi("os")
+fs    = sys:loadApi("fs")
+term  = sys:loadApi("term")
+peripheral = sys:loadApi("peripheral")
 if sys.type == "drone" then
-	drone = sys.loadApi("drone")
+	drone = sys:loadApi("drone")
 end
-shell = sys.loadApi("shell")
-
-
-
+shell = sys:loadApi("shell")
+print("System #"..(sys.id).." APIs loaded!")
 
 -- print environment as it is right now.
 -- lets leave this in for a while for debugging
-for i,v in pairs(_G) do
-	print("bootstrap env: "..i.." ("..type(v)..")")
-end
+--for i,v in pairs(_G) do
+--	print("bootstrap env: "..i.." ("..type(v)..")")
+--end
+--for i,v in pairs(sys) do
+	--print("bootstrap sys: "..i.." ("..type(v)..")")
+--end
 
-local id = getId()
-sys.id = id
+sys:init()
+
+--local id = getId()
+--sys.id = id
 
 if not fs.isDir("./") then fs.makeDir("./") end
 
@@ -49,9 +52,11 @@ print("Finished booting #"..sys.id..", dropping to shell.")
 
 if fs.isFile("startup") then
 	shell.run("startup")
+else
+	shell.main()
 end
 
-shell.main()
+
 --shell.run("quarry",{1,1,1})
 --[[
 local event = nil

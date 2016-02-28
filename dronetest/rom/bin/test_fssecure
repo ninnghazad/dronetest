@@ -1,4 +1,4 @@
 print(dump(fs.list("/")))
 _makePath = function(path) return path end
-print(dump(fs.list("/")))
+print(dump(fs.list("../../../")))
 return true

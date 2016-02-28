@@ -18,11 +18,37 @@ local function whitelist_metatable(t)
 	metatable_whitelist[t] = true
 end
 
-dronetest.userspace_environment = {ipairs=ipairs,pairs=pairs,print=print}
+dronetest.userspace_environment = {
+	ipairs = ipairs,
+	next = next,
+	pairs = pairs,
+	pcall = pcall,
+	tonumber = tonumber,
+	tostring = tostring,
+	type = type,
+	unpack = unpack,
+	--coroutine = { create = coroutine.create, resume = coroutine.resume, running = coroutine.running, status = coroutine.status, 	wrap = coroutine.wrap },
+	string = { byte = string.byte, char = string.char, find = string.find, 
+	format = string.format, gmatch = string.gmatch, gsub = string.gsub, 
+	len = string.len, lower = string.lower, match = string.match, 
+	rep = string.rep, reverse = string.reverse, sub = string.sub, 
+	upper = string.upper },
+	table = { insert = table.insert, maxn = table.maxn, remove = table.remove, 
+	sort = table.sort },
+	math = { abs = math.abs, acos = math.acos, asin = math.asin, 
+	atan = math.atan, atan2 = math.atan2, ceil = math.ceil, cos = math.cos, 
+	cosh = math.cosh, deg = math.deg, exp = math.exp, floor = math.floor, 
+	fmod = math.fmod, frexp = math.frexp, huge = math.huge, 
+	ldexp = math.ldexp, log = math.log, log10 = math.log10, max = math.max, 
+	min = math.min, modf = math.modf, pi = math.pi, pow = math.pow, 
+	rad = math.rad, random = math.random, sin = math.sin, sinh = math.sinh, 
+	sqrt = math.sqrt, tan = math.tan, tanh = math.tanh },
+	os = { clock = os.clock, difftime = os.difftime, time = os.time }
+  }
 dronetest.userspace_environment.mod_name = dronetest.mod_name
 dronetest.userspace_environment.mod_dir = dronetest.mod_dir
 dronetest.userspace_environment.dump = dump
-dronetest.userspace_environment.type = type
+--dronetest.userspace_environment.type = type
 dronetest.userspace_environment.count = count
 
 dronetest.userspace_environment.table = table
@@ -31,8 +57,8 @@ dronetest.userspace_environment.math = math
 
 -- sandboxed stuff can only getfenv things it setfenv'ed
 dronetest.userspace_environment.getfenv = function(f)
-	-- currently disabled with 'false and' because untested
-	if false and not fenv_whitelist[f] then return nil end
+	print("dronetest.userspace_environment.getfenv")
+	if not fenv_whitelist[f] then return {} end
 	return getfenv(f)
 end
 
@@ -45,7 +71,7 @@ end
 -- sandboxed stuff can only getmetatable things it setmetatable'ed
 dronetest.userspace_environment.getmetatable = function(t, mt)
 	-- currently disabled with 'false and' because untested
-	if false and not metatable_whitelist[t] then return nil end
+	if not metatable_whitelist[t] then return nil end
 	return getmetatable(t, mt)
 end
 
@@ -57,7 +83,11 @@ end
 
 --dronetest.userspace_environment.loadfile = loadfile
 dronetest.userspace_environment.pcall = pcall
-dronetest.userspace_environment.xpcall = xpcall
+dronetest.userspace_environment.xpcall = function(f,e)
+	print("userspace.xpcall!")
+	return xpcall(f,e)
+end
+
 --[[
 -- coroutine for userspace
 dronetest.userspace_environment.coroutine = table.copy(coroutine)

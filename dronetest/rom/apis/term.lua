@@ -1,6 +1,7 @@
 -- TERM API
 -- APIs have minetest and so on available in scope
 
+
 local term = {}
 term.cursorPos = {1,1}
 function term.clear()

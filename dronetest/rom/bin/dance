@@ -1,6 +1,15 @@
-if drone == nil then
-	print("this program can only run on drones.")
+
+local droneid = tonumber(argv[1])
+if droneid == nil then
+	print("Let's dance!.")
+	print("Usage: dance drone-id")
 	return false
+end
+
+local channel = "dronetest:drone:"..droneid
+local drone = peripheral.wrap(channel)
+if drone == nil then
+	return
 end
 
 print("SYSTEM GETTING DOWN NOW!")
@@ -13,12 +22,13 @@ while true do
 		print("RECEIVED INPUT, ABORT EPIC MOVES NOW!")
 		break
 	end
---[[
+---[[
 	os.sleep(2)
 	drone.forward()
+	os.sleep(2)
 	drone.back()
 --]]
----[[
+--[[
 	local r = math.round(math.random() * 6)
 	if r == 6 then r = 0 end
 	if r == 0 then

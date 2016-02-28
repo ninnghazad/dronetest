@@ -113,7 +113,7 @@ local function activate_by_id(id,t,pos)
 	env._G = env
 	jit.off(bootstrap,true)
 	setfenv(bootstrap,env)
-	function error_handler(err)
+	local function error_handler(err)
 		dronetest.print(id,"ERROR: "..dump(err))
 		print("INTERNALERROR: "..dump(err)..dump(debug.traceback()))
 	end
@@ -141,8 +141,10 @@ end
 local function deactivate_by_id(id)
 	
 	dronetest.print(id,"System #"..id.." deactivating.")
-	dronetest.force_loader.unregister_ticket(dronetest.active_systems[id].ticket)
-	dronetest.active_systems[id] = nil
+	if dronetest.active_systems[id] ~= nil then
+		dronetest.force_loader.unregister_ticket(dronetest.active_systems[id].ticket)
+		dronetest.active_systems[id] = nil
+	end
 	dronetest.log("System #"..id.." has been deactivated.")
 	
 	return true
@@ -255,7 +257,7 @@ minetest.register_node("dronetest:computer", {
 				deactivate(pos)
 			end
 			minetest.chat_send_player(sender:get_player_name(),"system #"..id.." deactivated, now "..count(dronetest.active_systems).." systems online.")
-		elseif fields["input"] ~= nil and fields["execute"] ~= nil and fields["input"] ~= "" then
+		elseif fields["input"] ~= nil and (fields["execute"] ~= nil or fields["quit"] == "true") and fields["input"] ~= "" then
 			dronetest.log("command: "..fields["input"])
 			local id = meta:get_int("id")
 			if dronetest.active_systems[id] ~= nil then
@@ -265,6 +267,9 @@ minetest.register_node("dronetest:computer", {
 				dronetest.log("system "..id.." now has "..#dronetest.active_systems[id].events.." events.")
 			else
 				minetest.chat_send_player(sender:get_player_name(),"Cannot exec, activate system first.")
+			end
+			if fields["quit"] == "true" then
+				return true
 			end
 		elseif fields["quit"] == true then
 			return true

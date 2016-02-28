@@ -53,6 +53,11 @@ end
 dronetest.events.unregister_listener = function(id,filter,listener)
 	dronetest.events.listeners[id][filter][listener] = nil
 end
+
+dronetest.events.unregister_listeners = function(id)
+	dronetest.events.listeners[id] = nil
+end
+
 dronetest.events.send = function(pos,event)
 	local meta = minetest.get_meta(pos)
 	local id = meta:get_int("id")

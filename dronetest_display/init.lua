@@ -86,6 +86,7 @@ local on_digiline_receive = function(pos, node, channel, msg)
 	meta:set_string("text", msg)
 	clearscreen(pos)
 	if msg ~= "" then
+		--print("#### "..#msg)
 		prepare_writing(pos)
 	end
 end
@@ -101,7 +102,7 @@ minetest.register_node("dronetest_display:display", {
 	inventory_image = "computerFront.png",
 	wield_image = "computerFront.png",
 	tiles = {"computerFront.png"},
-
+	light_source = default.LIGHT_MAX,
 	paramtype = "light",
 	sunlight_propagates = true,
 	paramtype2 = "wallmounted",
@@ -137,9 +138,9 @@ minetest.register_node("dronetest_display:display", {
 		effector = {
 			action = on_digiline_receive
 		},
-	},
+	}
 
-	light_source = 6,
+	
 })
 
 minetest.register_entity("dronetest_display:text", {
@@ -212,7 +213,7 @@ function dronetest.create_lines(text)
 	end
 	for i,word in ipairs(lines) do
 			-- use last n lines of buffer
-			if i >= #lines - NUMBER_OF_LINES then 
+			if i > #lines - NUMBER_OF_LINES then 
 				line = word
 				table.insert(tab, line)
 				--line_num = line_num+1
@@ -231,6 +232,7 @@ function dronetest.generate_texture(lines)
 	local texture = "[combine:"..LCD_WITH.."x"..LCD_WITH..""
 	local ypos = LCD_PADDING
 	local i
+	--print(#lines)
 	for i = 1, #lines do
 		texture = texture..dronetest.generate_line(lines[i], ypos)
 		ypos = ypos + LINE_HEIGHT
@@ -268,8 +270,9 @@ function dronetest.generate_line(s, ypos)
 	local texture = ""
 	local xpos = math.floor((LCD_WITH - 2 * LCD_PADDING - width) / 2 + LCD_PADDING)
 	xpos = LCD_PADDING --?
+	--print(#parsed)
 	for i = 1, #parsed do
-		texture = texture..":"..xpos..","..ypos.."=dronetest"..parsed[i]..".png"
+		texture = texture..":"..xpos..","..ypos.."=dt"..parsed[i]..".png"
 		xpos = xpos + CHAR_WIDTH + 1
 	end
 	
