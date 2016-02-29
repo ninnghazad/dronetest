@@ -46,6 +46,7 @@ lfs = require("lfs")
 
 dofile(dronetest.mod_dir.."/util.lua")
 dofile(dronetest.mod_dir.."/config.lua")
+dofile(dronetest.mod_dir.."/sandbox/sandbox.lua")
 dofile(dronetest.mod_dir.."/command.lua")
 dofile(dronetest.mod_dir.."/event.lua")
 dofile(dronetest.mod_dir.."/sys.lua")
