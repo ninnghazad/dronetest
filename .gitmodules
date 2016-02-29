@@ -1,0 +1,3 @@
+[submodule "dronetest/sandbox"]
+	path = dronetest/sandbox
+	url = https://github.com/APItools/sandbox.lua.git
