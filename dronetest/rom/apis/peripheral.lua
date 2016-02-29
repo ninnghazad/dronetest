@@ -69,7 +69,6 @@ function peripheral.wrap_digilines(channel)
 			digiline:receptor_send(pos, digiline.rules.default,channel, {action=msg,msg_id=msg_id})
 		end,
 		receive = function(timeout)
-			print(sys.id.." waits for peri")
 			return sys:waitForDigilineMessage(channel,"",timeout)
 		end
 	}
