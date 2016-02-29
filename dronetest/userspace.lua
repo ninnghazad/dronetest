@@ -9,6 +9,7 @@ if type(dronetest.bootstrap) ~= "string" then minetest.log("error","missing or u
 -- TODO: do we need to copy all the tables so they wont be changed for everybody by one user?
 
 local fenv_whitelist = setmetatable({}, {__mode="k"})
+fenv_whitelist[1] = true;
 local function whitelist_fenv(f)
 	fenv_whitelist[f] = true
 end
@@ -19,6 +20,7 @@ local function whitelist_metatable(t)
 end
 
 dronetest.userspace_environment = {
+	sys = {id=-1},
 	ipairs = ipairs,
 	next = next,
 	pairs = pairs,
@@ -48,19 +50,23 @@ dronetest.userspace_environment = {
 dronetest.userspace_environment.mod_name = dronetest.mod_name
 dronetest.userspace_environment.mod_dir = dronetest.mod_dir
 dronetest.userspace_environment.dump = dump
+dronetest.userspace_environment.pprint = pprint
 
---[[
+---[[
 -- sandboxed stuff can only getfenv things it setfenv'ed
 dronetest.userspace_environment.getfenv = function(f)
-	print("dronetest.userspace_environment.getfenv")
+	print("dronetest.userspace_environment.getfenv ")
+	dump(fenv_whitelist[f])
 	if not fenv_whitelist[f] then return {} end
 	return getfenv(f)
 end
 
 -- this probably doesn't need to be sandboxed - if a system ruins one of its fenvs, that's its own loss
 dronetest.userspace_environment.setfenv = function(f, env)
+	print("dronetest.userspace_environment.setfenv ")
+	local fout = setfenv(f, env)
 	fenv_whitelist[f] = true
-	return setfenv(f, env)
+	return fout
 end
 
 -- sandboxed stuff can only getmetatable things it setmetatable'ed
@@ -83,7 +89,7 @@ dronetest.userspace_environment.xpcall = function(f,e)
 	return xpcall(f,e)
 end
 
-
+--[[
 -- coroutine for userspace
 dronetest.userspace_environment.coroutine = table.copy(coroutine)
 dronetest.userspace_environment.coroutine.create = function(f)

@@ -101,7 +101,7 @@ local function get_blockpos(pos)
 		z = math.floor(pos.z/BLOCKSIZE)}
 end
 
-function drone_move_to_pos(drone,target)
+local function drone_move_to_pos(drone,target)
 	local node = minetest.get_node(target)
 	local pos = drone.object:getpos()	
 	--print("moveto: "..node.name.." "..dump(result).." "..dump(reason).." "..minetest.hash_node_position(get_blockpos(pos)))
@@ -142,7 +142,7 @@ function drone_move_to_pos(drone,target)
 	end
 	return true
 end
-function drone_suck(drone,target,inv)
+local function drone_suck(drone,target,inv)
 	-- TODO: enable sucking items out of other drones too
 	-- search detached inventories for that? target if drone first
 	local drops = minetest.get_objects_inside_radius(target,0.5)
@@ -194,7 +194,7 @@ function drone_suck(drone,target,inv)
 	end
 	return false
 end
-function drone_get_forward(drone)
+local function drone_get_forward(drone)
 	local pos = drone.object:getpos()
 	if pos == nil or drone.removed then error("lost contact") end
 	local yaw = drone.object:getyaw()
@@ -207,7 +207,7 @@ function drone_get_forward(drone)
 	target.z = pos.z - target.z 
 	return target
 end
-function drone_get_back(drone)
+local function drone_get_back(drone)
 	local pos = drone.object:getpos()
 	local yaw = drone.object:getyaw()
 	local dir = dronetest.yaw2dir(dronetest.snapRotation(yaw))
@@ -221,13 +221,13 @@ function drone_get_back(drone)
 	target.z = pos.z - target.z 
 	return target
 end
-function drone_get_up(drone)
+local function drone_get_up(drone)
 	local pos = drone.object:getpos()
 	local target = table.copy(pos)
 	target.y = target.y + 1
 	return target
 end
-function drone_get_down(drone)
+local function drone_get_down(drone)
 	local pos = drone.object:getpos()
 	local target = table.copy(pos)
 	target.y = target.y - 1
@@ -240,7 +240,7 @@ local function rand_pos(pos, radius)
 	return target
 end
 	
-function drone_dig(drone,target,pickup,print)
+local function drone_dig(drone,target,pickup,print)
 	if pickup == nil then pickup = true end
 	local node = minetest.get_node(target)
 	local name = node.name
@@ -605,6 +605,15 @@ function drone.on_activate(self, staticdata, dtime_s)
 			self.object:setyaw(r)
 			
 			print("add drone "..self.id.." to list. "..type(self.id))
+			while dronetest.drones[self.id] ~= nil do
+				local oldId = self.id
+				dronetest.last_drone_id = dronetest.last_drone_id + 1
+				self.id = dronetest.last_drone_id
+				self.channel = "dronetest:drone:"..self.id
+				print("found duplicate drones with id "..oldId..", duplicate now has id "..self.id)
+				
+				dronetest.save()
+			end
 			dronetest.drones[self.id] = self.object:get_luaentity()
 		else
 			self.yaw = 0

@@ -103,7 +103,7 @@ local function activate_by_id(id,t,pos)
 	local meta = minetest.get_meta(pos)
 	env.sys.channel = meta:get_string("channel")
 	env.sys.type = t
-	
+	env.table.copy = table.copy
 	-- overload print function to print to drone/computer's screen and not to servers stdout
 	env.print = function(msg) dronetest.print(id,msg) end
 
@@ -236,6 +236,8 @@ minetest.register_node("dronetest:computer", {
 		
 	end,
 	on_receive_fields = function(pos, formname, fields, sender)
+		fields = fields or {}
+		formname = formname or "NIL"
 		local meta = minetest.get_meta(pos)
 		dronetest.log("on_receive_fields received '"..formname.."': "..dump(fields))
 		local id = meta:get_int("id")

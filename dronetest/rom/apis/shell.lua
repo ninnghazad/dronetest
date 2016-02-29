@@ -106,7 +106,8 @@ function shell.main()
 end
 
 function shell.run(cmd,argv,env,env_global)
-	if env == nil then env = dronetest.userspace end
+	if env == nil then env = _G end
+	argv = argv or {}
 	-- TODO: write real cli parser
 	local f,err = loadfile(mod_dir.."/"..sys.id.."/"..cmd)
 	
@@ -123,10 +124,10 @@ function shell.run(cmd,argv,env,env_global)
 			if env[k] == nil then env[k] = v end 
 		end
 	else
-		print("shell.run from home: "..mod_dir.."/"..sys.id.."/"..cmd)
+		print("shell.run from home for #"..sys.id..": "..mod_dir.."/"..sys.id.."/"..cmd)
 	end
 	
-	env.argv = argv
+	env["argv"] = argv
 	setfenv(f,env)
 	jit.off(f,true)
 	local r = xpcall(f,shell.errorHandler)

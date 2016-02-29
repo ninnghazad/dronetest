@@ -1,3 +1,6 @@
 [submodule "dronetest/sandbox"]
 	path = dronetest/sandbox
 	url = https://github.com/APItools/sandbox.lua.git
+[submodule "pprint"]
+	path = dronetest/pprint
+	url = https://github.com/jagt/pprint.lua.git

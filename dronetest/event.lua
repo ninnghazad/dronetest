@@ -134,7 +134,8 @@ dronetest.events.receive = function(id,filter,channel,msg_id)
 		for i,e in pairs(dronetest.active_systems[id].events) do
 			for j,f in pairs(filter) do
 				if e.type ~= nil and e.type == f then
-					if e.type == "digiline" and channel ~= nil and type(e.channel) == "string" and channel ~= e.channel 
+					--if e.type == "digiline" and channel ~= nil and type(e.channel) == "string" and channel ~= e.channel 
+					if channel ~= nil and type(e.channel) == "string" and channel ~= e.channel 
 					and (msg_id == nil or (type(e.msg)=="table" and type(e.msg.msg_id) == "string" and e.msg.msg_id ~= msg_id)) then
 					else
 						table.remove(dronetest.active_systems[id].events,i)

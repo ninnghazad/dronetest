@@ -50,4 +50,30 @@ function peripheral.wrap(channel,timeout)
 	return newp
 end
 
+function peripheral.wrap_digilines(channel)
+	local newp = {
+		channel = channel,
+		sendAndReceive = function(msg,timeout)
+			local pos = dronetest.active_systems[sys.id].pos
+			local msg_id = sys:getUniqueId()
+			digiline:receptor_send(pos, digiline.rules.default,channel, {action=msg,msg_id=msg_id})
+			e = sys:waitForDigilineMessage(channel,msg_id,timeout)
+			if e == nil then
+				print("could not reach peripheral on channel '"..channel.."'.")
+				return nil
+			end
+			return unpack(e.msg)
+		end,
+		send = function(msg)
+			local pos = dronetest.active_systems[sys.id].pos
+			digiline:receptor_send(pos, digiline.rules.default,channel, {action=msg,msg_id=msg_id})
+		end,
+		receive = function(timeout)
+			print(sys.id.." waits for peri")
+			return sys:waitForDigilineMessage(channel,"",timeout)
+		end
+	}
+	return newp
+	
+end
 return peripheral

@@ -105,6 +105,7 @@ function table.copy(t, deep, safeenv, seen)
     seen[t] = nt
     return nt
 end
+
 function math.round(x)
 	return math.floor(x+0.5)
 end

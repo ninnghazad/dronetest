@@ -20,13 +20,15 @@ if not fs.isDir("./") then fs.makeDir("./") end
 
 print("Finished booting #"..sys.id..", dropping to shell.")
 
-function main() 
-	if fs.isFile("startup") then
-		shell.run("startup")
-	else
-		shell.main()
-	end
-end
-sandbox.run(main,_G)
+-- Test 
+--dump(_G)
+--dump(getfenv(shell.run))
 
+if fs.isFile("startup") then
+	shell.run("startup",{sys.id},_G)
+end
+
+shell.main()
+
+print("REBOOT")
 return true

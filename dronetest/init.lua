@@ -8,6 +8,7 @@ Licensed under NOTHING.
 
 --Global config and function table.
 dronetest = {
+	debug = true,
 	last_id = 0,
 	last_drone_id = 0,
 	globalstep_interval = 0.01,
@@ -17,7 +18,15 @@ dronetest = {
 	console_histories = {},
 	active_systems = {},
 	max_userspace_instructions = 1000000,
-	log = function(msg) minetest.log("action","dronetest: "..msg) end,
+	log = function(msg) 
+		msg = msg or "" 
+		minetest.log("dronetest: "..msg) 
+	end,
+	debug = function(msg) 
+		if not dronetest.debug then return end
+		msg = msg or "" 
+		minetest.log("debug","dronetest: "..msg) 
+	end,
 	mod_name = minetest.get_current_modname(),
 	mod_dir = minetest.get_modpath(minetest.get_current_modname()),
 	bootstrap = "",
@@ -44,9 +53,12 @@ package.cpath = package.cpath
 
 lfs = require("lfs")
 
+pprint = dofile(dronetest.mod_dir.."/pprint/pprint.lua")
+
+
 dofile(dronetest.mod_dir.."/util.lua")
 dofile(dronetest.mod_dir.."/config.lua")
-dofile(dronetest.mod_dir.."/sandbox/sandbox.lua")
+--dofile(dronetest.mod_dir.."/sandbox/sandbox.lua")
 dofile(dronetest.mod_dir.."/command.lua")
 dofile(dronetest.mod_dir.."/event.lua")
 dofile(dronetest.mod_dir.."/sys.lua")
