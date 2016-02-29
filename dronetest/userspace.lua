@@ -44,17 +44,12 @@ dronetest.userspace_environment = {
 	rad = math.rad, random = math.random, sin = math.sin, sinh = math.sinh, 
 	sqrt = math.sqrt, tan = math.tan, tanh = math.tanh },
 	os = { clock = os.clock, difftime = os.difftime, time = os.time }
-  }
+}
 dronetest.userspace_environment.mod_name = dronetest.mod_name
 dronetest.userspace_environment.mod_dir = dronetest.mod_dir
 dronetest.userspace_environment.dump = dump
---dronetest.userspace_environment.type = type
-dronetest.userspace_environment.count = count
 
-dronetest.userspace_environment.table = table
-dronetest.userspace_environment.string = string
-dronetest.userspace_environment.math = math
-
+--[[
 -- sandboxed stuff can only getfenv things it setfenv'ed
 dronetest.userspace_environment.getfenv = function(f)
 	print("dronetest.userspace_environment.getfenv")
@@ -88,7 +83,7 @@ dronetest.userspace_environment.xpcall = function(f,e)
 	return xpcall(f,e)
 end
 
---[[
+
 -- coroutine for userspace
 dronetest.userspace_environment.coroutine = table.copy(coroutine)
 dronetest.userspace_environment.coroutine.create = function(f)
