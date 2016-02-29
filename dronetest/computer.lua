@@ -117,7 +117,7 @@ local function activate_by_id(id,t,pos)
 		dronetest.print(id,"ERROR: "..dump(err))
 		print("INTERNALERROR: "..dump(err)..dump(debug.traceback()))
 	end
-	--local cr = coroutine.create(function() xpcall(function() debug.sethook(timeout,"",100) bootstrap() end,error_handler) end)
+	--local cr = coroutine.create(function() xpcall(function() debug.sethook(timeout,"",500000) bootstrap() end,error_handler) end)
 	local cr = coroutine.create(function() xpcall(bootstrap,error_handler) end)
 	--debug.sethook(cr,function () coroutine.yield() end,"",100)
 	
