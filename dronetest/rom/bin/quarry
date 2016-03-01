@@ -1,6 +1,6 @@
 --[[ quarry demo
 this probably should be removed for release, or be put as a secret-prog. 
-would take away a lot of fun if we just gave a working quarry to the player, wouldn't it?!
+would take away a lot of fun if we just gave a working quarry to the player.
 this contacts a drone and makes it dig through a block below it's current position.
 the drone will try to unload items to a chest above it's current position, and will return
 to that position once finished.
@@ -18,6 +18,7 @@ this leaves less of a mess in the landscape.
 	local backfill = true
 -- end of options
 
+print("QUARRY")
 local droneid = tonumber(argv[1])
 local radius = tonumber(argv[2])
 local depth = tonumber(argv[3])
@@ -170,6 +171,7 @@ end
 local reverseDirs = { [0] = 2,[1] = 3, [2] = 0, [3] = 1,[4] = 5,[5] = 4}
 function digTo(target,pickup)
 	--print("digTo: "..dump(target))
+	coroutine.yield()
 	local dir = -1
 	local counter = 0
 	local digged = ""
@@ -284,6 +286,7 @@ for i = start,totalBlocks-1,1 do
 		unload()
 		print("finished unloading, returning to work")
 	end
+	coroutine.yield()
 end
 unload()
 print("finished quarry")
