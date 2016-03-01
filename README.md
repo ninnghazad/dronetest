@@ -38,7 +38,7 @@ That sandboxed env. is called userspace and is accessible for the user through t
 Each virtual system is assigned a real folder on the server, within the mods folder, named by its id (sys.id).  
 Systems must not ever have access to anything outside that directory.  
 The /rom directory does not physically lie withing the virtual systems' directories,   
-but rather shall be included then commands are parsed and directories are listed,   
+but rather shall be included when commands are parsed and directories are listed,   
 so that APIs can be read from userspace, commands executed from userspace, but neither changed.  
 Each API and each command goes in its own file.
 
@@ -47,7 +47,6 @@ APIs and commands are allowed to do so, because they have to be installed by the
 and are thusly deemed safe.
 
 Take note of:
-https://github.com/minetest/minetest/pull/1606
 http://mesecons.net/developers.php
 
 ###Current problems:
@@ -63,14 +62,14 @@ Look around the source for examples on how to get stuff done.
 - Core:
   - ~~Making sure minetest.* function can be savely called through coroutines (see current problems): https://github.com/minetest/minetest/issues/1709~~
   - ~~Drones need to spawn an invisible node when standing still, so we can interface them with other nodes, like mesecons stuff.~~
-  - Peripheral API. working prototype in code, but just has one wrap() function. not really an api yet.
+  - ~~Peripheral API. working prototype in code, but just has one wrap() function. not really an api yet.
   - ~~Turn drones into peripherals and still have something like the drone.* api~~
   - ~~Make recipes and crafting-hooks for computer and drone nodes.~~
-  - Make drone diggable.
+  - ~~Make drone diggable.
   - Make drone inventories persist restarts: https://github.com/minetest/minetest/issues/1696
   - ~~Integrate (wireless)networking in event-queue (just where digilines is not enough)~~
   - Better command-parser, with autocomplete.
-  - Real GUI with charbased input in good refresh-rate.
+  - ~~Real GUI with charbased input in good refresh-rate.
   - Better shell, based on a better GUI. with color, and settable cursor-position, redraws...
   - Wrapping more important functions like load* and do*
   - using minetest.is_protected for all stuff that could be used for grieving.
@@ -88,13 +87,11 @@ The most important ones are:
 - CMDs:
   - A set of basic fs commands, like ls,cp,rm,mv ...
   - Other commands one expects from a OS like beep,reboot,shutdown,time...
-  - Cool stuff
 - Misc:
   - A drone-model with "wield-points" for tools and peripherals.
   - ~~Textures~~
   - Sounds (like, beeep)
-  - Some good examples
-  - Some good tutorials
+  - Some good examples / tutorials
 
 This list is constantly changing, so don't rely on it and communicate what you work on.
   
@@ -106,7 +103,4 @@ Closeup of a display:
 
 Drone's front:  
 <img src="http://dunkelraum.net/share/screen7.png"/>  
-
-Drone's back:  
-<img src="http://dunkelraum.net/share/screen6.png"/>  
 
