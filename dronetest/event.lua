@@ -8,7 +8,10 @@ dronetest.events.send_by_id = function(id,event)
 			for filter,callbacks in pairs(dronetest.events.callbacks[id]) do
 				for _i,f in pairs(filter) do
 					if event.type ~= nil and event.type == f then
-						if event.msg.msg_id ~= nil and callbacks[event.msg.msg_id] ~= nil then
+						if type(event.msg) ~= table and callbacks[0] ~= nil then
+							callbacks[0](event)
+							sent = true
+						elseif event.msg.msg_id ~= nil and callbacks[event.msg.msg_id] ~= nil then
 							callbacks[event.msg.msg_id](event)
 							callbacks[event.msg.msg_id] = nil
 							sent = true
@@ -74,6 +77,9 @@ dronetest.events.send_all = function(event)
 	return count
 end
 dronetest.events.wait_for_receive = function(id,filter,channel,msg_id,timeout)
+	timeout = timeout or 4
+	msg_id = msg_id or 0
+	
 	--print("WAIT FOR DIGILINE #"..id)
 	--print("waiting, events left: "..dronetest.count(dronetest.active_systems[id].events))
 	if dronetest.active_systems[id] == nil then

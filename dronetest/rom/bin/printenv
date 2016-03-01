@@ -1,0 +1,9 @@
+-- printenv
+-- lists environment contents
+print("Environment: _G "..type(_G))
+
+for k,v in pairs(_G) do
+	print(k..": "..type(v))
+end
+
+return true

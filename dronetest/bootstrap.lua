@@ -28,7 +28,7 @@ if fs.isFile("startup") then
 	shell.run("startup",{sys.id},_G)
 end
 
-shell.main()
+shell.main(_G)
 
 print("REBOOT")
 return true

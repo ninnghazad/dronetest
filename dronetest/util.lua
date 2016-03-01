@@ -105,7 +105,17 @@ function table.copy(t, deep, safeenv, seen)
     seen[t] = nt
     return nt
 end
-
+function string:split(sep) 
+        if sep == nil then
+                sep = "%s"
+        end
+        local t={} ; i=1
+        for str in string.gmatch(self, "([^"..sep.."]+)") do
+                t[i] = str
+                i = i + 1
+        end
+        return t
+end
 function math.round(x)
 	return math.floor(x+0.5)
 end

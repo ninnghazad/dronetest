@@ -35,7 +35,7 @@ shell.cursorPos = {1,1}
 term  = sys:loadApi("term")
 
 -- Shell main loop
-function shell.main()
+function shell.main(env)
 	print("main")
 	term.clear()
 	term.write("Welcome to dronetest shell.\n")
@@ -46,7 +46,7 @@ function shell.main()
 	c = ""
 	cmd = ""
 	local buffer = {}
-	local env = nil
+	
 	local env_global = _G
 
 	-- We register a listener that actually handles stuff, because that is instant, and does not have a 1-tic delay
@@ -87,7 +87,7 @@ function shell.main()
 		dronetest.sleep(0.02)
 		if #buffer > 0 then
 			local cmd = table.remove(buffer,1)
-			local argv = string.split(cmd," ")
+			local argv = cmd:split(" ")
 			if type(argv) ~= "table" or #argv < 1 then return false end
 			cmd = table.remove(argv,1)
 			argv[0] = cmd -- i like it the C way
@@ -117,14 +117,16 @@ function shell.run(cmd,argv,env,env_global)
 			print("ERROR: no such file or buggy file '"..cmd.."': "..err)
 			return false
 		end
-		print("shell.run from rom: "..mod_dir.."/rom/bin/"..cmd)
+		--print("shell.run from rom: "..mod_dir.."/rom/bin/"..cmd)
+		print("shell.run from rom: /rom/bin/"..cmd)
 		
 		if env_global == nil then env_global = _G end
 		for k,v in pairs(env_global) do 
 			if env[k] == nil then env[k] = v end 
 		end
 	else
-		print("shell.run from home for #"..sys.id..": "..mod_dir.."/"..sys.id.."/"..cmd)
+		--print("shell.run from home for #"..sys.id..": "..mod_dir.."/"..sys.id.."/"..cmd)
+		print("shell.run from home for #"..sys.id..": /"..cmd)
 	end
 	
 	env["argv"] = argv

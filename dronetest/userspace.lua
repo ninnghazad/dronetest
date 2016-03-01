@@ -34,7 +34,7 @@ dronetest.userspace_environment = {
 	format = string.format, gmatch = string.gmatch, gsub = string.gsub, 
 	len = string.len, lower = string.lower, match = string.match, 
 	rep = string.rep, reverse = string.reverse, sub = string.sub, 
-	upper = string.upper },
+	upper = string.upper, split = string.split },
 	table = { insert = table.insert, maxn = table.maxn, remove = table.remove, 
 	sort = table.sort },
 	math = { abs = math.abs, acos = math.acos, asin = math.asin, 
