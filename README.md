@@ -54,6 +54,7 @@ http://mesecons.net/developers.php
 ##Roadmap:
 Look around the source for examples on how to get stuff done.  
 - Core:
+  - Store data in world's instead of mod's folder.
   - Make drone inventories persist restarts: https://github.com/minetest/minetest/issues/1696
   - Better command-parser, with autocomplete.
   - Better shell, based on a better GUI. with color, and settable cursor-position, redraws...
