@@ -52,7 +52,7 @@ local prepare_writing = function(pos)
 end
 
 local reset_meta = function(pos)
-	minetest.get_meta(pos):set_string("formspec", "keyeventbox[0.3,0.4;1,1;proxy;keyboard.png;keyboardActive.png]field[channel;Channel;${channel}]")
+	minetest.get_meta(pos):set_string("formspec", "size[11,1]keyeventbox[0.3,0.4;1,1;proxy;keyboard.png;keyboardActive.png]field[1.3,0.7;5,1;channel;Channel;${channel}]")
 end
 dronetest_display = {}
 dronetest_display.actions = {
@@ -127,9 +127,25 @@ minetest.register_node("dronetest_display:display", {
 	end,
 
 	on_receive_fields = function(pos, formname, fields, sender)
-		if (fields.channel) then
-			minetest.get_meta(pos):set_string("channel", fields.channel)
+		fields = fields or {}
+		formname = formname or "NIL"
+		local meta = minetest.get_meta(pos)
+		if fields["channel"] ~= nil then
+			meta:set_string("channel",fields.channel)
+		elseif fields["input"] ~= nil and (fields["execute"] ~= nil or fields["quit"] == "true") and fields["input"] ~= "" then
+			dronetest.log("command: "..fields["input"])
+			if fields["quit"] == "true" then
+				return true
+			end
+		elseif fields["proxy"] ~= nil and fields["proxy"] ~= "" then
+			print("received keyboard event through proxy: "..fields["proxy"])
+			--dronetest.events.send_by_id(id,{type="key",msg={msg=fields["proxy"],msg_id=0}})
+			return true
 		end
+		
+--		redraw_computer_formspec(pos,sender)
+		reset_meta(pos)
+		return true
 	end,
 
 	digiline = 
