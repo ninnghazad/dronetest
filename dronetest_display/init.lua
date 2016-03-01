@@ -52,7 +52,7 @@ local prepare_writing = function(pos)
 end
 
 local reset_meta = function(pos)
-	minetest.get_meta(pos):set_string("formspec", "field[channel;Channel;${channel}]")
+	minetest.get_meta(pos):set_string("formspec", "keyeventbox[0.3,0.4;1,1;proxy;keyboard.png;keyboardActive.png]field[channel;Channel;${channel}]")
 end
 dronetest_display = {}
 dronetest_display.actions = {
@@ -98,7 +98,7 @@ local display_box = {
 
 minetest.register_node("dronetest_display:display", {
 	drawtype = "nodebox",
-	description = "Dronetest Digiline Display",
+	description = "Dronetest digiline display, with integrated keyboard!",
 	inventory_image = "computerFront.png",
 	wield_image = "computerFront.png",
 	tiles = {"computerFront.png"},
