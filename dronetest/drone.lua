@@ -208,6 +208,7 @@ local function drone_get_forward(drone)
 	target.x = pos.x - target.x 
 	target.y = pos.y - target.y 
 	target.z = pos.z - target.z 
+	pprint({"target",target})
 	return target
 end
 local function drone_get_back(drone)
