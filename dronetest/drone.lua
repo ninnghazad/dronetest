@@ -104,21 +104,21 @@ end
 local function drone_move_to_pos(drone,target)
 	local node = minetest.get_node(target)
 	local pos = drone.object:getpos()	
-	--print("moveto: "..node.name.." "..dump(result).." "..dump(reason).." "..minetest.hash_node_position(get_blockpos(pos)))
-	
-	-- Get a fresh ticket to have out target forceloaded
+	print("moveto: "..node.name.." ")
+	pprint(pos)
+	-- Get a fresh ticket to have target forceloaded
 	local ticket = nil
 	if minetest.hash_node_position(get_blockpos(target)) ~= minetest.hash_node_position(get_blockpos(pos)) or node.name == "ignore" then
 		ticket = dronetest.force_loader.register_ticket(target)
 	end
 	
 	local result,reason = drone_check_target(target)
-	
+	print("AHA1")
 	if not result then 
 		dronetest.force_loader.unregister_ticket(ticket)
 		return result,reason 
 	end
-	
+	print("AHA2")
 	local dir = target
 	dir.x = dir.x - pos.x
 	dir.y = dir.y - pos.y
@@ -132,7 +132,7 @@ local function drone_move_to_pos(drone,target)
 		drone.object:moveto(pos,true)
 		coroutine.yield()
 	end
-	
+	print("AHA3")
 	-- Free old and set new ticket
 	if ticket ~= nil then
 		if drone.ticket ~= nil then
@@ -140,6 +140,7 @@ local function drone_move_to_pos(drone,target)
 		end
 		drone.ticket = table.copy( ticket )
 	end
+	print("AHA4")
 	return true
 end
 local function drone_suck(drone,target,inv)

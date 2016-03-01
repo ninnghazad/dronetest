@@ -1,5 +1,4 @@
 -- jit.off(true) -- no effect?
-local peripheral = sys.loadApi("peripheral")
 
 local function shakeit(channel)
 	local drone = peripheral.wrap(channel)
@@ -16,12 +15,12 @@ local function shakeit(channel)
 		end
 		drone.forward()
 		--print("IMMA WANDER OFF! ")
-		--sleep(1)
+		sleep(1)
 	end
 end
 
 
-function f1() shakeit("dronetest:drone:1") end
+function f1() shakeit("dronetest:drone:17") end
 
 local c1 = coroutine.create(f1)
 while coroutine.status(c1) == "suspended" do
