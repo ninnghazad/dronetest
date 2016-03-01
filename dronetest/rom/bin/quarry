@@ -283,12 +283,12 @@ for i = start,totalBlocks-1,1 do
 	end
 	if isFull() then
 		print("drone is stuffed, returning")
-		unload()
+--		unload()
 		print("finished unloading, returning to work")
 	end
 	coroutine.yield()
 end
-unload()
+--unload()
 print("finished quarry")
 print(dump(digged))
 return true

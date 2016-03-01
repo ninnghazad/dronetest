@@ -274,7 +274,7 @@ function dronetest.generate_line(s, ypos)
 	for i = 1, #parsed do
 		texture = texture..":"..xpos..","..ypos.."=dt"..parsed[i]..".png"
 		xpos = xpos + CHAR_WIDTH + 1
-		coroutine.yield()
+		
 	end
 	
 	return texture

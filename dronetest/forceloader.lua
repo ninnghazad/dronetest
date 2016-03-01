@@ -70,7 +70,7 @@ force_loader.update = function()
 		end
 		
 	end
-	dronetest.log("force_loader: now "..dronetest.count(force_loader.tickets).." tickets and "..dronetest.count(force_loader.loaded).." forced chunks.")
+--	dronetest.log("force_loader: now "..dronetest.count(force_loader.tickets).." tickets and "..dronetest.count(force_loader.loaded).." forced chunks.")
 	force_loader.save()
 end
 force_loader.wait = function(pos)
@@ -121,7 +121,7 @@ force_loader.unregister_ticket = function(ticket)
 	if ticket == nil then return end
 	for i,t in ipairs(force_loader.tickets) do
 		if t.id == ticket.id then
-			dronetest.log("force_loader: found ticket "..t.id.." to be removed "..t.pos.x..", "..t.pos.y..", "..t.pos.z)
+--			dronetest.log("force_loader: found ticket "..t.id.." to be removed "..t.pos.x..", "..t.pos.y..", "..t.pos.z)
 			table.remove(force_loader.tickets,i)
 			break
 		end
@@ -132,7 +132,7 @@ end
 force_loader.save = function()
 	local file = io.open(force_loader.save_file, "w")
 	if file then
-		dronetest.log("save force_loader: "..minetest.serialize(force_loader.loaded))
+--		dronetest.log("save force_loader: "..minetest.serialize(force_loader.loaded))
 		file:write(minetest.serialize(force_loader.loaded))
 		file:close()
 	end

@@ -337,9 +337,9 @@ local function drone_drop(drone,target,slot,amount)
 		print("nothing to drop")
 		return false
 	end
-	if type(slot) ~= number or slot < 1 or slot > inv:get_size("main") then
+	if type(slot) ~= "number" or slot < 1 or slot > inv:get_size("main") then
 		slot = 1
-		stack = inv:get_stack("main",slot)
+		local stack = inv:get_stack("main",slot)
 		while stack:is_empty() do
 			slot = slot + 1
 			if slot > inv:get_size("main") then
