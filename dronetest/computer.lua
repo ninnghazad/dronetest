@@ -128,7 +128,8 @@ local function activate_by_id(id,t,pos)
 
 	dronetest.log("System #"..id.." has been activated, now "..dronetest.count(dronetest.active_systems).." systems active.")
 	dronetest.print(id,"System #"..id.." has been activated.")
-	
+	--minetest.chat_send_player(sender:get_player_name(),"system #"..id.." activated, now "..count(dronetest.active_systems).." systems online.")
+
 	return true
 end
 local function activate(pos)
@@ -145,8 +146,11 @@ local function deactivate_by_id(id)
 		dronetest.force_loader.unregister_ticket(dronetest.active_systems[id].ticket)
 		dronetest.active_systems[id] = nil
 	end
+	-- TODO: is this need if we release the ticket?
+	--minetest.forceload_free_block(pos)
+
 	dronetest.log("System #"..id.." has been deactivated.")
-	
+	--minetest.chat_send_player(sender:get_player_name(),"system #"..id.." deactivated, now "..count(dronetest.active_systems).." systems online.")
 	return true
 end
 local function deactivate(pos)
@@ -208,8 +212,14 @@ minetest.register_node("dronetest:computer", {
 	--	rules = mesecon.rules,
 		-- make mesecons.rule so we can use some sides of the node as input, and some as output?
 		-- or should we make a special peripheral for that an the computers/drones can just be switched on with meseconsian energy?
-		action_on = function (pos, node) print("mesecons on signal") end,
-		action_off = function (pos, node) print("mesecons off signal") end,
+		action_on = function (pos, node) 
+			print("mesecons on signal") 
+			activate(pos)
+		end,
+		action_off = function (pos, node) 
+			print("mesecons off signal") 
+			deactivate(pos)
+		end,
 		action_change = function (pos, node) print("mesecons toggle signal") end,
 	}},
 	on_construct = function(pos)
@@ -230,7 +240,6 @@ minetest.register_node("dronetest:computer", {
 	end,
 	on_destruct = function(pos, oldnode)
 		deactivate(pos)
-		minetest.forceload_free_block(pos)
 	end,
 	on_event_receive = function(event)
 		
@@ -253,12 +262,10 @@ minetest.register_node("dronetest:computer", {
 			if meta:get_int("status") ~= 1 then
 				activate(pos)
 			end
-			minetest.chat_send_player(sender:get_player_name(),"system #"..id.." activated, now "..count(dronetest.active_systems).." systems online.")
 		elseif fields["poweroff"] ~= nil then
 			if meta:get_int("status") ~= 0 then
 				deactivate(pos)
 			end
-			minetest.chat_send_player(sender:get_player_name(),"system #"..id.." deactivated, now "..count(dronetest.active_systems).." systems online.")
 		elseif fields["input"] ~= nil and (fields["execute"] ~= nil or fields["quit"] == "true") and fields["input"] ~= "" then
 			dronetest.log("command: "..fields["input"])
 			local id = meta:get_int("id")

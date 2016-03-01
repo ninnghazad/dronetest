@@ -264,11 +264,11 @@ local function drone_dig(drone,target,pickup,print)
 	end
 	local def = ItemStack({name=node.name}):get_definition()
 	if def.liquidtype ~= "none" then
-		print("'"..node.name.."' is not diggable. A")
+		print("'"..node.name.."' is not diggable. (it's a liquid) A")
 		return false
 	end
 	if node ~= nil and node.name ~= "air" and def.liquidtype == "none" and (not def.diggable) then
-		print("'"..node.name.."' is not diggable. B")
+		print("'"..node.name.."' is not diggable. (it's not a liquid but undiggable) B")
 		return false
 	end
 	-- if we cannot dig something, we try to suck items out of it - maybe its a chest.
@@ -344,6 +344,7 @@ local function tobool(bool)
 	return false 
 end
 local function drone_drop(drone,target,slot,amount)
+	local stack
 	local item = nil
 	local inv = minetest.get_inventory({type="detached",name="dronetest_drone_"..drone.id})
 	if inv == nil then dronetest.log("BUG: drone without inventory!") return false end
@@ -354,7 +355,7 @@ local function drone_drop(drone,target,slot,amount)
 	end
 	if type(slot) ~= "number" or slot < 1 or slot > inv:get_size("main") then
 		slot = 1
-		local stack = inv:get_stack("main",slot)
+		stack = inv:get_stack("main",slot)
 		while stack:is_empty() do
 			slot = slot + 1
 			if slot > inv:get_size("main") then
@@ -363,8 +364,16 @@ local function drone_drop(drone,target,slot,amount)
 			end
 			stack = inv:get_stack("main",slot)
 		end
-		item = stack:take_item(amount)
+	else
+		stack = inv:get_stack("main",slot)
 	end
+	if amount <= 0 then
+		amount = stack:get_count()
+	end
+	if stack:is_empty() or amount > stack:get_count() then
+		return false
+	end
+	item = stack:take_item(amount)
 	
 	local tinv = minetest.get_meta(target):get_inventory()
 	if tinv == nil or not tinv:room_for_item("main",item) then
@@ -589,7 +598,8 @@ function drone.on_digiline_receive_line(self, channel, msg, senderPos)
 			--local response = {true}
 --			print("drone #"..self.id.." finished action '"..msg.action.."': "..dump(response))
 --			print("drone #"..self.id.." will answer on "..channel..".")
-			dronetest.sleep(0.05) -- limit to 4 action per second
+			--dronetest.sleep(0.001) -- limit speed - this will actually be much slower
+
 			-- send response -- act as if transceiver would send the message
 			digiline:receptor_send(senderPos, digiline.rules.default,channel, {action = msg.action ,msg_id = msg.msg_id,msg = response })
 			return

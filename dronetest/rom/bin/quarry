@@ -174,7 +174,7 @@ function digTo(target,pickup)
 	coroutine.yield()
 	local dir = -1
 	local counter = 0
-	local digged = ""
+	local diggedBlock = ""
 	local slot = 0
 	while pos.x ~= target.x or pos.z ~= target.z or pos.y ~= target.y do
 		
@@ -187,18 +187,18 @@ function digTo(target,pickup)
 		
 		local r,t = goDir(dir)
 		if not r then
-			digged = digDir(dir,pickup or backfill)
+			diggedBlock = digDir(dir,pickup or backfill)
 			r,t = goDir(dir)
 			if not r then
 				return false,t
 			end
-			
+			addToDigged(diggedBlock)
 			if doBackfill ~= nil then doBackfill(dir) end
-			if digged ~= nil and backfill and not pickup and digged ~= "ignore" and minetest.registered_nodes[digged] ~= nil then
-				local d = minetest.registered_nodes[digged].drop
-				if d == nil then d = digged end
+			if diggedBlock ~= nil and backfill and not pickup and diggedBlock ~= "ignore" and minetest.registered_nodes[diggedBlock] ~= nil then
+				local d = minetest.registered_nodes[diggedBlock].drop
+				if d == nil then d = diggedBlock end
 				local slot = drone.findInInventory(d)
-				print("BACKFILL: "..digged.." in "..dump(slot))
+				print("BACKFILL: "..diggedBlock.." in "..dump(slot))
 				if slot then
 					doBackfill_slot = slot
 					doBackfill = function(dir)
@@ -229,11 +229,10 @@ local function unload()
 	print("unload ...")
 	digTo(startPos,true)
 --	goDir(3)
---[[	while drone.dropUp() do
+	while drone.dropUp() do
 		--print("unloading ...")
 		coroutine.yield()
 	end
---]]
 --	goDir(1)
 end	
 local function shouldDig(name)
@@ -250,6 +249,15 @@ end
 local function isFull()
 	-- save 1 free spot so drone can backfill 
 	for i = 1,invSize-1,1 do
+	-- drop ignored items on check so we don't fill up? basically breaks backfill.
+	--[[	local name = inv:get_stack("main",i):get_name()
+		for i,v in ipairs(ignore) do
+			if v == name then 
+				drone.dropUp(i,0)
+				return false
+			end
+		end
+	--]]
 		if inv:get_stack("main",i):is_empty() then return false end
 	end
 	return true
@@ -274,7 +282,7 @@ for i = start,totalBlocks-1,1 do
 	if y > posMax.y then y = posMax.y end
 	target = {x=x,y=y+skip,z=z}
 		
-	if addToDigged(digTo(target,shouldDig(drone.inspect()))) then 
+	if digTo(target,shouldDig(drone.inspect())) then 
 		if y < posMax.y and shouldDig(drone.inspectUp()) then addToDigged(drone.digUp(true)) end
 		if y > posMin.y and shouldDig(drone.inspectDown()) then addToDigged(drone.digDown(true)) end
 		if skip > 0 then skip = skip - 1 end
