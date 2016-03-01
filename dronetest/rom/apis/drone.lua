@@ -129,14 +129,8 @@ function drone.forward()
 	local result,reason = checkTarget(npos)
 	if not result then return result,reason end
 	print("FORWARD: "..dump(pos).." "..dump(opos).." "..dump(npos).." "..dir.." "..yaw)
-	npos = table.copy(pos)
-	for i=1,steps,1 do
-		npos.x = npos.x + opos.x/steps
-		npos.y = npos.y + opos.y/steps
-		npos.z = npos.z + opos.z/steps
-		d.object:moveto(npos,true)
-		sys.yield()
-	end
+	d.object:moveto(pos,true)
+	sys.yield()
 	return true
 end
 function drone.back()

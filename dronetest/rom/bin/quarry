@@ -12,7 +12,7 @@ this leaves less of a mess in the landscape.
 -- options
 	-- table of nodenames to to pickup/dig
 	local ignore = {"default:stone","default:gravel","default:dirt","default:sand","default:dirt_with_grass","default:cobble","default:leaves"}
-	ignore = {}
+	--ignore = {}
 	
 	-- Using this the drone will try to put back all blocks it had to dig but should'nt pick up.
 	local backfill = true
@@ -229,10 +229,11 @@ local function unload()
 	print("unload ...")
 	digTo(startPos,true)
 --	goDir(3)
-	while drone.dropUp() do
+--[[	while drone.dropUp() do
 		--print("unloading ...")
 		coroutine.yield()
 	end
+--]]
 --	goDir(1)
 end	
 local function shouldDig(name)
@@ -283,12 +284,12 @@ for i = start,totalBlocks-1,1 do
 	end
 	if isFull() then
 		print("drone is stuffed, returning")
---		unload()
+		unload()
 		print("finished unloading, returning to work")
 	end
 	coroutine.yield()
 end
---unload()
+unload()
 print("finished quarry")
 print(dump(digged))
 return true

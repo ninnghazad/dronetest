@@ -48,15 +48,32 @@ function drone.on_rightclick(self, clicker)
 end
 
 
-
+-- How many substeps to make per one unit of movement - so drones' movement doesn't look as blocky
 local steps = 10
+
 dronetest.rad2unit = 1 / (2*3.14159265359)
 dronetest.yaw2dir = function(yaw)
 	local dir = yaw * dronetest.rad2unit
-	if dir > 0.875 or dir <= 0.125 then return 0 
+	if dir > 0.875 or dir <= 0.125 then return 2
 	elseif dir > 0.125 and dir <= 0.375 then return 1 
-	elseif dir > 0.375 and dir <= 0.625 then return 2
+	elseif dir > 0.375 and dir <= 0.625 then return 0
 	else return 3 end
+end
+
+dronetest.dir2vec6d = function(dir) 
+	return ({[0]={x=0, y=1, z=0},
+		{x=0, y=0, z=1},
+		{x=0, y=0, z=-1},
+		{x=1, y=0, z=0},
+		{x=-1, y=0, z=0},
+		{x=0, y=-1, z=0}})[dir]
+end
+dronetest.dir2vec = function(dir) 
+	return ({[0]=
+		{x=0, y=0, z=1},
+		{x=1, y=0, z=0},
+		{x=0, y=0, z=-1},
+		{x=-1, y=0, z=0}})[dir]
 end
 
 dronetest.snapRotation = function(r)
@@ -197,18 +214,13 @@ local function drone_get_forward(drone)
 	local pos = drone.object:getpos()
 	if pos == nil or drone.removed then error("lost contact") end
 	local yaw = drone.object:getyaw()
-	print(yaw)
 	local dir = dronetest.yaw2dir(dronetest.snapRotation(yaw))
-	print("dir1: "..dir)
-	if dir == 0 then dir = 2 
-	elseif dir == 2 then dir = 0 end
-	print("dir2: "..dir)
-	local target = minetest.facedir_to_dir(dir)
-	
+	local target = dronetest.dir2vec(dir)
+
 	target.x = pos.x - target.x 
 	target.y = pos.y - target.y 
 	target.z = pos.z - target.z 
-	pprint({"target",target})
+	
 	return target
 end
 local function drone_get_back(drone)
@@ -217,9 +229,8 @@ local function drone_get_back(drone)
 	local dir = dronetest.yaw2dir(dronetest.snapRotation(yaw))
 	dir = dir + 2
 	if dir > 3 then dir = dir - 4 end
-	if dir == 0 then dir = 2 
-	elseif dir == 2 then dir = 0 end
-	local target = minetest.facedir_to_dir(dir)
+	 
+	local target = dronetest.dir2vec(dir)
 	target.x = pos.x - target.x 
 	target.y = pos.y - target.y 
 	target.z = pos.z - target.z 
@@ -432,6 +443,7 @@ dronetest.drone_actions = {
 	forward = {desc="Moves the drone forward.",
 		func = function(drone,print)
 			local target = drone_get_forward(drone)
+			pprint(target)
 			return drone_move_to_pos(drone,target)
 		end},
 	back = {desc="Moves the drone back.",

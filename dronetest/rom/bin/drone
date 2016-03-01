@@ -1,0 +1,15 @@
+local channel = argv[1]
+local drone = peripheral.wrap(channel)
+local cmd = argv[2]
+if drone == nil then 
+	print("could not contact drone "..channel)
+	return false 
+end
+if drone[cmd] == nil or type(drone[cmd]) ~= "function" then
+	print("drone does not have function '"..cmd.."'.")
+	return false
+end
+
+drone[cmd]()
+
+return true
