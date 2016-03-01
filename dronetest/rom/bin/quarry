@@ -12,7 +12,7 @@ this leaves less of a mess in the landscape.
 -- options
 	-- table of nodenames to to pickup/dig
 	local ignore = {"default:stone","default:gravel","default:dirt","default:sand","default:dirt_with_grass","default:cobble","default:leaves"}
-	--ignore = {}
+	ignore = {}
 	
 	-- Using this the drone will try to put back all blocks it had to dig but should'nt pick up.
 	local backfill = true

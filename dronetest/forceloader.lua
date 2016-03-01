@@ -50,7 +50,7 @@ force_loader.update = function()
 		--	end
 			table.insert(force_loader.loaded,pos)
 		else
-			dronetest.log("force_loader: could not forceload block, this probably mean that your max_forceloaded_blocks setting is not high enough.")
+			dronetest.log("force_loader: could not forceload block, this probably mean that your max_forceloaded_blocks setting is not high enough. currently "..forceloader.loaded.." blocks forceloaded.")
 			sleep(4)
 			return false
 		end
