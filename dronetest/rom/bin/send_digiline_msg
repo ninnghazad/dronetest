@@ -2,7 +2,7 @@ local channel = argv[1]
 local msg = argv[2]
 local pos = dronetest.active_systems[sys.id].pos
 
-local msg_id = sys:getUniqueId() 
 digiline:receptor_send(pos, digiline.rules.default, channel, msg)
 print(sys:waitForDigilineMessage(channel,0,4))
+
 return true
