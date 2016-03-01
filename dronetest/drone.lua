@@ -113,12 +113,12 @@ local function drone_move_to_pos(drone,target)
 	end
 	
 	local result,reason = drone_check_target(target)
-	print("AHA1")
+
 	if not result then 
 		dronetest.force_loader.unregister_ticket(ticket)
 		return result,reason 
 	end
-	print("AHA2")
+
 	local dir = target
 	dir.x = dir.x - pos.x
 	dir.y = dir.y - pos.y
@@ -132,7 +132,6 @@ local function drone_move_to_pos(drone,target)
 		drone.object:moveto(pos,true)
 		coroutine.yield()
 	end
-	print("AHA3")
 	-- Free old and set new ticket
 	if ticket ~= nil then
 		if drone.ticket ~= nil then
@@ -140,7 +139,6 @@ local function drone_move_to_pos(drone,target)
 		end
 		drone.ticket = table.copy( ticket )
 	end
-	print("AHA4")
 	return true
 end
 local function drone_suck(drone,target,inv)
@@ -199,10 +197,14 @@ local function drone_get_forward(drone)
 	local pos = drone.object:getpos()
 	if pos == nil or drone.removed then error("lost contact") end
 	local yaw = drone.object:getyaw()
+	print(yaw)
 	local dir = dronetest.yaw2dir(dronetest.snapRotation(yaw))
+	print("dir1: "..dir)
 	if dir == 0 then dir = 2 
 	elseif dir == 2 then dir = 0 end
+	print("dir2: "..dir)
 	local target = minetest.facedir_to_dir(dir)
+	
 	target.x = pos.x - target.x 
 	target.y = pos.y - target.y 
 	target.z = pos.z - target.z 
