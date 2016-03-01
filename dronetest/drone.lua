@@ -121,8 +121,8 @@ end
 local function drone_move_to_pos(drone,target)
 	local node = minetest.get_node(target)
 	local pos = drone.object:getpos()	
-	print("moveto: "..node.name.." ")
-	pprint(pos)
+--	print("moveto: "..node.name.." ")
+--	pprint(pos)
 	-- Get a fresh ticket to have target forceloaded
 	local ticket = nil
 	if minetest.hash_node_position(get_blockpos(target)) ~= minetest.hash_node_position(get_blockpos(pos)) or node.name == "ignore" then
@@ -443,7 +443,6 @@ dronetest.drone_actions = {
 	forward = {desc="Moves the drone forward.",
 		func = function(drone,print)
 			local target = drone_get_forward(drone)
-			pprint(target)
 			return drone_move_to_pos(drone,target)
 		end},
 	back = {desc="Moves the drone back.",
@@ -590,7 +589,7 @@ function drone.on_digiline_receive_line(self, channel, msg, senderPos)
 			--local response = {true}
 --			print("drone #"..self.id.." finished action '"..msg.action.."': "..dump(response))
 --			print("drone #"..self.id.." will answer on "..channel..".")
-			
+			dronetest.sleep(0.05) -- limit to 4 action per second
 			-- send response -- act as if transceiver would send the message
 			digiline:receptor_send(senderPos, digiline.rules.default,channel, {action = msg.action ,msg_id = msg.msg_id,msg = response })
 			return

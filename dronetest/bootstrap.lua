@@ -8,9 +8,9 @@ os    = sys:loadApi("os")
 fs    = sys:loadApi("fs")
 term  = sys:loadApi("term")
 peripheral = sys:loadApi("peripheral")
-if sys.type == "drone" then
+--[[if sys.type == "drone" then
 	drone = sys:loadApi("drone")
-end
+end--]]
 shell = sys:loadApi("shell")
 print("System #"..(sys.id).." APIs loaded!")
 
