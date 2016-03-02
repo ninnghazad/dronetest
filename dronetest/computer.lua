@@ -145,6 +145,7 @@ local function deactivate_by_id(id)
 	if dronetest.active_systems[id] ~= nil then
 		dronetest.force_loader.unregister_ticket(dronetest.active_systems[id].ticket)
 		dronetest.active_systems[id] = nil
+		dronetest.events.listeners[id] = nil
 	end
 	-- TODO: is this need if we release the ticket?
 	--minetest.forceload_free_block(pos)
@@ -200,11 +201,14 @@ minetest.register_node("dronetest:computer", {
 		effector = {
 			action = function(pos, node, channel, msg) -- add incoming digiline-msgs to event-queue
 				local meta = minetest.get_meta(pos)
-				--local setchan = meta:get_string("channel")
-				--if setchan ~= channel then return end
 				local id = meta:get_int("id")
-			--	print("COMPUTER "..id.." received on "..channel.." "..dump(msg))
-				dronetest.events.send_by_id(id,{type="digiline",channel=channel,msg=msg})
+				--print("computer #"..id.." received digiline: "..dump(msg))
+				if type(msg) == "table" and msg.type ~= nil then
+					msg.channel = channel
+					dronetest.events.send_by_id(id,msg)
+				else
+					dronetest.events.send_by_id(id,{type="digiline",channel=channel,msg=msg})
+				end
 			end
 		},
 	},

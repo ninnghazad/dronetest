@@ -4,6 +4,8 @@ for i,v in pairs(getfenv(1)) do
 	print("SHELL ENV "..i..": "..type(v))
 end
 --]]
+local fs = sys:loadApi("fs")
+local term  = sys:loadApi("term")
 
 local shell = {}
 function shell.errorHandler(err,level)
@@ -29,28 +31,32 @@ local function parse_flags(...)
    return flags, unpack(args)
 end
 
-shell.prompt = "# "
+shell.prompt = function()
+	return "#"..sys.id..":"..fs.currentDir().."$ "
+end
 shell.cursorPos = {1,1}
 
-term  = sys:loadApi("term")
+
 
 -- Shell main loop
 function shell.main(env)
 	print("main")
 	term.clear()
 	term.write("Welcome to dronetest shell.\n")
-	term.write(shell.prompt)
+	term.write(shell.prompt())
 	local loop = true
 	local c,l,cmd
 	l = ""
 	c = ""
 	cmd = ""
 	local buffer = {}
-	
+	local history = {}
 	local env_global = _G
-
+	local historyPosition = 0;
 	-- We register a listener that actually handles stuff, because that is instant, and does not have a 1-tic delay
 	local func = function(event)
+	--	print("Char: " .. dump(event.msg))
+	
 		if term.keyChars[event.msg.msg] then
 			c = term.keyChars[event.msg.msg]
 			if c ~= '\n' then
@@ -61,20 +67,77 @@ function shell.main(env)
 				end
 				term.write(c)
 			else
+				term.write(c)
 				cmd = l
-				if string.len(cmd) <= 0 then return
-			end
-				term.write("\nexecute '"..cmd.."':\n")
+				--[[if string.len(cmd) <= 0 then 
+					return
+				end--]]
+				--term.write("\nexecute '"..cmd.."':\n")
 				if cmd == "exit" then
 					print("exiting shell...")
 					loop = false
-					return
+					return true
+				elseif cmd == "history" then
+					print("command history:")
+					for k,v in ipairs(history) do
+						print(v)
+					end
+					l = ""
+					table.insert(buffer,l)
+					return true
 				end
 				table.insert(buffer,l)
 				l = ""
 			end
+		else
+			if event.msg.msg == "38:0:0" then -- up-arrow
+				if #history == 0 then
+					-- beep
+				else
+					if historyPosition == 0 then
+						historyPosition = #history
+					elseif historyPosition > 1 then
+						historyPosition = historyPosition - 1
+					end
+					for i = 1,#l,1 do
+						term.write("\b") -- string.rep doesn't work with '\b'!
+					end
+					l = history[historyPosition]
+					term.write(l)
+				end
+			elseif event.msg.msg == "40:0:0" then -- down-arrow
+				if #history == 0 then
+					-- beep
+				else
+					if historyPosition == 0 then
+						l = ""
+						return
+					elseif historyPosition == #history then
+						historyPosition = 0
+						
+						for i = 1,#l,1 do
+							term.write("\b")
+						end
+						l = ""
+						return
+					else
+						historyPosition = historyPosition + 1
+					end
+					for i = 1,#l,1 do
+						term.write("\b")
+					end
+					l = history[historyPosition]
+					term.write(l)
+				end
+			else
+				print("shell: unbound key "..event.msg.msg)
+				return false
+			end
+			
 		end
+		return true
 	end
+	
 	local listener = dronetest.events.register_listener(sys.id,{"key"},func)
 	local lfunc = function(event) 
 		table.insert(buffer,event.msg)
@@ -86,22 +149,36 @@ function shell.main(env)
 	while loop do
 		dronetest.sleep(0.02)
 		if #buffer > 0 then
+		--	pprint(buffer)
 			local cmd = table.remove(buffer,1)
-			local argv = cmd:split(" ")
-			if type(argv) ~= "table" or #argv < 1 then return false end
-			cmd = table.remove(argv,1)
-			argv[0] = cmd -- i like it the C way
-			shell.run(cmd,argv,env,env_global)
-			cmd = ""
-			l = ""
-			c = ""
-			term.write(shell.prompt)
+			
+			if #cmd > 0 then
+				local ocmd = cmd
+				local argv = cmd:split(" ")
+				if type(argv) ~= "table" or #argv < 1 then return false end
+				cmd = table.remove(argv,1)
+				argv[0] = cmd -- i like it the classic way
+				
+				dronetest.events.unregister_listener(sys.id,listener)
+				dronetest.events.unregister_listener(sys.id,line_listener)
+				shell.run(cmd,argv,env,env_global)
+				listener = dronetest.events.register_listener(sys.id,{"key"},func)
+				line_listener = dronetest.events.register_listener(sys.id,{"input"},lfunc)
+				
+				table.insert(history,ocmd)
+				historyPosition = 0
+			--	dump(history)
+			--	cmd = ""
+			--	l = ""
+			--	c = ""
+			end
+			term.write("\n"..shell.prompt())
 		end
 	end
 	
 	-- Remember to remove the listener
-	dronetest.events.unregister_listener(listener)
-	dronetest.events.unregister_listener(line_listener)
+	dronetest.events.unregister_listener(sys.id,listener)
+	dronetest.events.unregister_listener(sys.id,line_listener)
 	term.write("shell has terminated\n")
 end
 
@@ -137,7 +214,7 @@ function shell.run(cmd,argv,env,env_global)
 		print("WARN: "..cmd.." failed!")
 		return false
 	end
-	print("command returns: "..dump(r))
+	--print("command returns: "..dump(r))
 	return true
 end
 

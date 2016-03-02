@@ -16,8 +16,9 @@ print("System #"..(sys.id).." APIs loaded!")
 
 sys:init()
 
-if not fs.isDir("./") then fs.makeDir("./") end
 
+if not fs.isDir("./") then fs.makeDir("./") end
+fs.chDir("./")
 print("Finished booting #"..sys.id..", dropping to shell.")
 
 -- Test 

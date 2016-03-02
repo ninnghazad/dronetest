@@ -1,22 +1,24 @@
+
 dronetest.events = {}
 dronetest.events.callbacks = {}
 dronetest.events.listeners = {}
 dronetest.events.send_by_id = function(id,event)
 	if dronetest.active_systems[id] ~= nil then
+		--print("send event for #"..id.." "..dump(event))
 		if type(dronetest.events.callbacks[id]) == "table" then
 			local sent = false
-			for filter,callbacks in pairs(dronetest.events.callbacks[id]) do
-				for _i,f in pairs(filter) do
+			for _j,callback in pairs(dronetest.events.callbacks[id]) do
+				for _i,f in pairs(callback.filter) do
 					if event.type ~= nil and event.type == f then
-						if type(event.msg) ~= table and callbacks[0] ~= nil then
-							callbacks[0](event)
+						if type(event.msg) ~= table and callbacks.func ~= nil and callback.msg_id ~= event.msg.msg_id then
+							callbacks.func(event)
 							sent = true
-						elseif event.msg.msg_id ~= nil and callbacks[event.msg.msg_id] ~= nil then
-							callbacks[event.msg.msg_id](event)
-							callbacks[event.msg.msg_id] = nil
+						elseif event.msg.msg_id ~= nil and callback.msg_id == event.msg.msg_id then
+							callback.func(event)
+							dronetest.events.callbacks[id][_i] = nil
 							sent = true
-						elseif callbacks[0] ~= nil then
-							callbacks[0](event)
+						else
+							callback.func(event)
 							sent = true
 						end
 						
@@ -26,15 +28,16 @@ dronetest.events.send_by_id = function(id,event)
 			end
 			if sent then return true end
 		end
+		
 		if type(dronetest.events.listeners[id]) == "table" then
 			local sent = false
-			for filter,listeners in pairs(dronetest.events.listeners[id]) do
-				for _i,f in pairs(filter) do
+			for _f,listener in pairs(dronetest.events.listeners[id]) do
+				for _i,f in pairs(listener.filter) do
 					if event.type ~= nil and event.type == f then
-						for _j,listener in pairs(listeners) do
-							listener(event)
+						--for _j,listener in pairs(listeners) do
+							listener.func(event)
 							sent = true
-						end
+						--end
 					end
 				end
 			end
@@ -48,13 +51,19 @@ dronetest.events.send_by_id = function(id,event)
 end
 
 dronetest.events.register_listener = function(id,filter,func)
-	if type(dronetest.events.listeners[id]) ~= "table" then dronetest.events.listeners[id] = {} end
-	if type(dronetest.events.listeners[id][filter]) ~= "table" then dronetest.events.listeners[id][filter] = {} end
-	table.insert(dronetest.events.listeners[id][filter],func)
-	return #dronetest.events.listeners[id][filter]
+	local listener = {filter=filter,func = func}
+	if type(dronetest.events.listeners[id]) ~= "table" then 
+		dronetest.events.listeners[id] = {}
+	end
+	--if type(dronetest.events.listeners[id][filter]) ~= "table" then dronetest.events.listeners[id][filter] = {} end
+	table.insert(dronetest.events.listeners[id],listener)
+	return #dronetest.events.listeners[id]
 end
-dronetest.events.unregister_listener = function(id,filter,listener)
-	dronetest.events.listeners[id][filter][listener] = nil
+dronetest.events.unregister_listener = function(id,listenerId)
+	if dronetest.events.listeners[id] ~= nil then
+		dronetest.events.listeners[id][listenerId] = nil
+		print("removed listener "..id.." "..listenerId)
+	end
 end
 
 dronetest.events.unregister_listeners = function(id)
@@ -111,8 +120,10 @@ dronetest.events.wait_for_receive = function(id,filter,channel,msg_id,timeout)
 	end
 	--print("#$#######################################################################################")
 	if type(dronetest.events.callbacks[id]) ~= "table" then dronetest.events.callbacks[id] = {} end
-	if type(dronetest.events.callbacks[id][filter]) ~= "table" then dronetest.events.callbacks[id][filter]= {} end
-	dronetest.events.callbacks[id][filter][msg_id] = callback
+	--if type(dronetest.events.callbacks[id][msg_id]) ~= "table" then dronetest.events.callbacks[id][msg_id]= {} end
+	
+	table.insert(dronetest.events.callbacks[id],{filter=filter,func=callback,msg_id=msg_id})
+	local callbackId = #dronetest.events.callbacks[id]
 	local s = 0.05
 	local time = minetest.get_gametime()
 	while result == nil and ((minetest.get_gametime() - time) <= timeout or timeout == 0) do
@@ -123,7 +134,7 @@ dronetest.events.wait_for_receive = function(id,filter,channel,msg_id,timeout)
 	--	if s > timeout / 10 then s = 0.05 end
 	end
 	
-	dronetest.events.callbacks[id][filter][msg_id] = nil
+	dronetest.events.callbacks[id][callbackId] = nil
 	
 --	if dronetest.count(dronetest.events.callbacks[id][filter]) <= 0 then dronetest.events.callbacks[id][filter] = {} end
 --	if dronetest.count(dronetest.events.callbacks[id]) <= 0 then dronetest.events.callbacks[id] = {} end
@@ -143,6 +154,7 @@ dronetest.events.receive = function(id,filter,channel,msg_id)
 					--if e.type == "digiline" and channel ~= nil and type(e.channel) == "string" and channel ~= e.channel 
 					if channel ~= nil and type(e.channel) == "string" and channel ~= e.channel 
 					and (msg_id == nil or (type(e.msg)=="table" and type(e.msg.msg_id) == "string" and e.msg.msg_id ~= msg_id)) then
+						
 					else
 						table.remove(dronetest.active_systems[id].events,i)
 						return e

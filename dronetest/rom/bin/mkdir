@@ -1,6 +1,15 @@
 -- mkdir
--- create a directory
-local dir = "./"
-if argv[1] ~= nil then dir = argv[1] end
-print("create directory "..dir)
+-- creates a directory
+
+local dir
+if argv[1] ~= nil then 
+	dir = argv[1] 
+else 
+	print("Creates a directory.\nUsage: mkdir DIRECTORY")
+	return true
+end
+if string.sub(dir,1,1) ~= "/" then
+	dir = fs.currentDir().."/"..dir
+end
+print("creating directory "..dir)
 return fs.makeDir(dir)

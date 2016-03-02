@@ -1,7 +1,21 @@
 -- ls
 -- lists directory contents
-local dir = "./"
-if argv[1] ~= nil then dir = argv[1] end
-print("list directory "..dir)
-print(dump(fs.list(dir)))
+local dir
+
+if argv[1] ~= nil then 
+	dir = argv[1] 
+else
+	dir = fs.currentDir()
+end
+local content = fs.list(dir)
+table.sort(content)
+print("'"..fs.getAbsolutePath(dir).."' total "..#content)
+for k,v in pairs(content) do
+	local t = "D"
+	if fs.isFile(v) then
+		t = F
+	end
+	print("    "..t.." "..v)
+end
+
 return true

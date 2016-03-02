@@ -23,10 +23,10 @@ local displays = {
 	-- on ground
 	--* [1] = {delta = {x = 0, y =-0.4, z = 0}, pitch = math.pi /  2},
 	-- sides 7/16?
-	[2] = {delta = {x =  0.4374, y = 0, z = 0}, yaw = math.pi / -2},
-	[3] = {delta = {x = -0.4374, y = 0, z = 0}, yaw = math.pi /  2},
-	[4] = {delta = {x = 0, y = 0, z =  0.4374}, yaw = 0},
-	[5] = {delta = {x = 0, y = 0, z = -0.4374}, yaw = math.pi},
+	[2] = {delta = {x =  0.436, y = 0, z = 0}, yaw = math.pi / -2},
+	[3] = {delta = {x = -0.436, y = 0, z = 0}, yaw = math.pi /  2},
+	[4] = {delta = {x = 0, y = 0, z =  0.436}, yaw = 0},
+	[5] = {delta = {x = 0, y = 0, z = -0.436}, yaw = math.pi},
 }
 local clearscreen = function(pos)
 	local objects = minetest.get_objects_inside_radius(pos, 0.5)
@@ -52,7 +52,7 @@ local prepare_writing = function(pos)
 end
 
 local reset_meta = function(pos)
-	minetest.get_meta(pos):set_string("formspec", "size[11,1]keyeventbox[0.3,0.4;1,1;proxy;keyboard.png;keyboardActive.png]field[1.3,0.7;5,1;channel;Channel;${channel}]")
+	minetest.get_meta(pos):set_string("formspec", "size[6,1]keyeventbox[0.3,0.4;1,1;proxy;keyboard.png;keyboardActive.png]field[1.3,0.4;5,1;channel;Channel;${channel}]")
 end
 dronetest_display = {}
 dronetest_display.actions = {
@@ -131,19 +131,14 @@ minetest.register_node("dronetest_display:display", {
 		formname = formname or "NIL"
 		local meta = minetest.get_meta(pos)
 		if fields["channel"] ~= nil then
+		--	dronetest.log("drontest_display: channel change to "..fields["channel"])
 			meta:set_string("channel",fields.channel)
-		elseif fields["input"] ~= nil and (fields["execute"] ~= nil or fields["quit"] == "true") and fields["input"] ~= "" then
-			dronetest.log("command: "..fields["input"])
-			if fields["quit"] == "true" then
-				return true
-			end
-		elseif fields["proxy"] ~= nil and fields["proxy"] ~= "" then
-			print("received keyboard event through proxy: "..fields["proxy"])
-			--dronetest.events.send_by_id(id,{type="key",msg={msg=fields["proxy"],msg_id=0}})
+		end
+		if fields["proxy"] ~= nil and fields["proxy"] ~= "" then
+		--	dronetest.log("drontest_display: keypress '"..fields["proxy"].."'")
+			digiline:receptor_send(pos,digiline.rules.default,meta:get_string("channel"),{type="key",msg={msg=fields["proxy"],msg_id=0}})
 			return true
 		end
-		
---		redraw_computer_formspec(pos,sender)
 		reset_meta(pos)
 		return true
 	end,
