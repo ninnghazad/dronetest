@@ -1,0 +1,132 @@
+-- edit
+-- a minimalistic editor for dronetest
+local filename = argv[1]
+if filename == nil then
+	print("edit - a minimalist editor for dronetest\nUsage: edit FILENAME")
+	return true
+end
+local file = ""
+if not fs.isFile(filename) then
+	print("Creating '"..filename.."'.")
+	fs.touch(filename)
+else
+
+	file = fs.readFile(filename)
+	if file == nil or not file then
+		print("Could not open '"..filename.."'.")
+		return false
+	end
+end
+
+local function toLines(str)
+	return str:split("\n")
+end
+
+local function toString(arr)
+	return table.concat(arr,"\n")
+end
+function replaceChar(str,pos,c)
+    return str:sub(1, pos-1) .. c .. str:sub(pos+1)
+end
+function insertChar(str,pos,c)
+    return str:sub(1, pos-1) .. c .. str:sub(pos)
+end
+lines = toLines(file)
+
+print("file has "..#lines.." lines")
+
+local screenWidth = 80
+local screenHeight = 38
+local visibleRows = screenHeight - 2
+local cursorPosX = 0
+local cursorPosY = 0
+local screenPosX = 0
+local screenPosY = 0
+local flip = true
+local loop = true
+local msg = ""
+-- TODO: get real screen size? what if multiple displays are connected?
+--       maybe use some kind of DISPLAY environment variable holding a channel for a specific display?
+--       but even then multiple ones could listen on that channel.
+--	 maybe just width and height as envvars? 
+
+
+local function redrawScreen()
+	local line = ""
+	local screen = "";
+	screen = "### edit - "..filename.." "
+	screen = screen..string.rep('#',screenWidth-#screen).."\n"
+	for y = screenPosY,screenPosY+visibleRows,1 do
+		if y+1 > #lines then
+			line = ""
+		else
+			line = lines[y+1]
+		end
+		
+		line = line..string.rep(" ",screenWidth-string.len(line))
+		if flip and y == cursorPosY then
+			line = replaceChar(line,cursorPosX+1,'_')
+		end
+		screen = screen..line.."\n"
+	end
+	line = "### ctrl-c to quit ### @ "..cursorPosX.." x "..cursorPosY.." # "..msg.." "
+	line = line..string.rep('#',screenWidth-#line).."\n"
+	screen = screen..line
+	term.clear()
+	print(screen)
+end
+
+local function keyCallback(event)
+	local key = event.msg.msg
+--	print("key: "..key)
+
+	if key == "37:0:0" then
+		cursorPosX = cursorPosX - 1
+	elseif key == "38:0:0" then
+		cursorPosY = cursorPosY - 1
+	elseif key == "39:0:0" then
+		cursorPosX = cursorPosX + 1
+	elseif key == "40:0:0" then
+		cursorPosY = cursorPosY + 1
+	elseif term.keyChars[key] ~= nil then
+		lines[cursorPosY+1] = insertChar(lines[cursorPosY+1],cursorPosX+1,term.keyChars[key])
+		-- overwrite mode?
+		--lines[cursorPosY+1] = replaceChar(lines[cursorPosY+1],cursorPosX+1,term.keyChars[key])
+	else
+		msg = "Unknown key '"..key.."'."
+	end
+
+	if cursorPosX < 0 then cursorPosX = 0 end
+	if cursorPosY < 0 then cursorPosY = 0 end
+--	if cursorPosX < 0 then cursorPosX = 0 end
+	if cursorPosY > #lines-1 then cursorPosY = #lines-1 end
+	
+	if cursorPosY < screenPosY then screenPosY = cursorPosY end
+	if cursorPosY > screenPosY+visibleRows then screenPosY = cursorPosY-visibleRows end
+
+	if cursorPosX < screenPosX then screenPosX = cursorPosX end
+	if cursorPosX > screenPosX+screenWidth then screenPosX = cursorPosX-screenWidth end
+
+	flip = true
+	redrawScreen()
+	return true
+end
+
+print("edit on #"..sys.id.." @ "..sys.channel)
+local listener = dronetest.events.register_listener(sys.id,{"key"},keyCallback)
+
+redrawScreen()
+while loop do
+--	local event = sys:waitForEvent(sys.channel,{"key"},4)
+--	dump(event)
+	redrawScreen()
+	if flip then
+		flip = false
+	else 
+		flip = true
+	end
+	sleep(0.5)
+end
+
+dronetest.events.unregister_listener(sys.id,listener)
+return true
