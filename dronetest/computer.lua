@@ -121,7 +121,7 @@ local function activate_by_id(id,t,pos)
 	local cr = coroutine.create(function() xpcall(bootstrap,error_handler) end)
 	--debug.sethook(cr,function () coroutine.yield() end,"",100)
 	
-	dronetest.active_systems[id] = {coroutine_handle = cr,events = {},type=t,id=id,pos=pos,last_update = minetest.get_gametime(),ticket = dronetest.force_loader.register_ticket(pos)}
+	dronetest.active_systems[id] = {coroutine_handle = cr,events = {},type=t,id=id,pos=pos,last_update = minetest.get_gametime(),ticket = dronetest.force_loader.register_ticket(pos),env = env}
 	
 	dronetest.log("STATUS: "..coroutine.status(dronetest.active_systems[id].coroutine_handle))
 	dronetest.log("TYPE: "..type(dronetest.active_systems[id]))
@@ -256,6 +256,9 @@ minetest.register_node("dronetest:computer", {
 		local id = meta:get_int("id")
 		if fields["channel"] ~= nil then
 			meta:set_string("channel",fields.channel)
+			if dronetest.active_systems[id] ~= nil then
+				dronetest.active_systems[id].env.sys.channel = meta:get_string("channel")
+			end	
 		end
 		if fields["clear"] ~= nil then
 			dronetest.console_histories[id] = ""

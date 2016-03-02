@@ -28,6 +28,12 @@ function dronetest.sys:waitForDigilineMessage(channel,msg_id,timeout)
 	if e == nil then return nil end
 	return e.msg
 end
+
+function dronetest.sys:waitForEvent(channel,filter,timeout)
+	local e = dronetest.events.wait_for_receive(self.id,filter,channel,0,timeout)
+	if e == nil then return nil end
+	return e.msg
+end
 function dronetest.sys:init()
 	-- make sure there are no old listeners left after a crash/restart
 	dronetest.events.unregister_listeners(self.id)

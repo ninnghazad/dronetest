@@ -70,6 +70,21 @@ fs.isFile = function(path)
 	end
 	return false
 end
+
+fs.readFile = function(path)
+	local p = _makePath(path)
+	if p == "" then return false end
+	if lfs.attributes(p,"mode") ~= "file" then
+		return false
+	end
+	io.input(p)
+	return io.read("*all")
+end
+fs.touch = function(path)
+	local p = _makePath(path)
+	if p == "" then return false end
+	return lfs.touch(p)
+end
 	
 fs.list = function(path)
 	if path == nil then path = "./" end

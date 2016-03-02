@@ -10,8 +10,8 @@ dronetest.events.send_by_id = function(id,event)
 			for _j,callback in pairs(dronetest.events.callbacks[id]) do
 				for _i,f in pairs(callback.filter) do
 					if event.type ~= nil and event.type == f then
-						if type(event.msg) ~= table and callbacks.func ~= nil and callback.msg_id ~= event.msg.msg_id then
-							callbacks.func(event)
+						if type(event.msg) ~= table and callback.func ~= nil and callback.msg_id ~= event.msg.msg_id then
+							callback.func(event)
 							sent = true
 						elseif event.msg.msg_id ~= nil and callback.msg_id == event.msg.msg_id then
 							callback.func(event)
@@ -116,7 +116,7 @@ dronetest.events.wait_for_receive = function(id,filter,channel,msg_id,timeout)
 			result = event 
 		end
 	--	result = event
-		return event
+		return true
 	end
 	--print("#$#######################################################################################")
 	if type(dronetest.events.callbacks[id]) ~= "table" then dronetest.events.callbacks[id] = {} end
