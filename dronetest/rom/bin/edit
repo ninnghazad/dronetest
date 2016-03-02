@@ -31,7 +31,14 @@ end
 function insertChar(str,pos,c)
     return str:sub(1, pos-1) .. c .. str:sub(pos)
 end
+function removeChar(str,pos)
+    return str:sub(1, pos-1) .. str:sub(pos+1)
+end
+
 lines = toLines(file)
+if #lines == 0 then
+	table.insert(lines,"")
+end
 
 print("file has "..#lines.." lines")
 
@@ -88,6 +95,23 @@ local function keyCallback(event)
 		cursorPosX = cursorPosX + 1
 	elseif key == "40:0:0" then
 		cursorPosY = cursorPosY + 1
+	elseif key == "8:0:0" then -- backspace
+		cursorPosX = cursorPosX - 1
+		if cursorPosX > -1 then
+			lines[cursorPosY+1] = removeChar(lines[cursorPosY+1],cursorPosX+1)
+		elseif cursorPosY > 0 then
+			local tmp = lines[cursorPosY+1]
+			table.remove(lines,cursorPosY+1)
+			cursorPosY = cursorPosY - 1
+			cursorPosX = #lines[cursorPosY+1]
+			lines[cursorPosY+1] = lines[cursorPosY+1]..tmp
+		end
+	elseif key == "13:0:0" then -- enter
+		local tmp = lines[cursorPosY+1]:sub(cursorPosX+1)
+		lines[cursorPosY+1] = lines[cursorPosY+1]:sub(1,cursorPosX)
+		table.insert(lines,cursorPosY+2,tmp)
+		cursorPosY = cursorPosY+1
+		cursorPosX = 0
 	elseif term.keyChars[key] ~= nil then
 		lines[cursorPosY+1] = insertChar(lines[cursorPosY+1],cursorPosX+1,term.keyChars[key])
 		cursorPosX = cursorPosX + 1
@@ -99,8 +123,8 @@ local function keyCallback(event)
 
 	if cursorPosX < 0 then cursorPosX = 0 end
 	if cursorPosY < 0 then cursorPosY = 0 end
---	if cursorPosX < 0 then cursorPosX = 0 end
 	if cursorPosY > #lines-1 then cursorPosY = #lines-1 end
+	if cursorPosX > #lines[cursorPosY+1]  then cursorPosX = #lines[cursorPosY+1] end
 	
 	if cursorPosY < screenPosY then screenPosY = cursorPosY end
 	if cursorPosY > screenPosY+visibleRows then screenPosY = cursorPosY-visibleRows end
