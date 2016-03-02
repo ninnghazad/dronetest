@@ -90,6 +90,7 @@ local function keyCallback(event)
 		cursorPosY = cursorPosY + 1
 	elseif term.keyChars[key] ~= nil then
 		lines[cursorPosY+1] = insertChar(lines[cursorPosY+1],cursorPosX+1,term.keyChars[key])
+		cursorPosX = cursorPosX + 1
 		-- overwrite mode?
 		--lines[cursorPosY+1] = replaceChar(lines[cursorPosY+1],cursorPosX+1,term.keyChars[key])
 	else
