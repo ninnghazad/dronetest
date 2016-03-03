@@ -5,6 +5,12 @@ if filename == nil then
 	print("edit - a minimalist editor for dronetest\nUsage: edit FILENAME")
 	return true
 end
+
+if fs.isDir(filename) then
+	print("Cannot open '"..filename.."', it's a directory.")
+	return false
+end
+
 local file = ""
 if not fs.isFile(filename) then
 	print("Creating '"..filename.."'.")
@@ -41,7 +47,8 @@ if #lines == 0 then
 end
 
 print("file has "..#lines.." lines")
-
+local madeChanges = false
+local confirmed = false
 local screenWidth = 80
 local screenHeight = 38
 local visibleRows = screenHeight - 2
@@ -61,8 +68,19 @@ local msg = ""
 local function redrawScreen()
 	local line = ""
 	local screen = "";
-	screen = "### edit - "..filename.." "
-	screen = screen..string.rep('#',screenWidth-#screen).."\n"
+	screen = "### edit - "..filename.." # "..#toString(lines).." bytes # "..#lines[cursorPosY+1].." chars in line # "
+	if madeChanges then
+		screen = screen.."[unsaved changes] "
+	else
+		screen = screen.."[no unsaved changes] "
+	end
+	screen = screen..string.rep('#',screenWidth-#screen-4)
+	if screenPosX > 0 then
+		screen = screen.."<<<#"
+	else
+		screen = screen.."---#"
+	end
+	screen = screen.."\n"
 	for y = screenPosY,screenPosY+visibleRows,1 do
 		if y+1 > #lines then
 			line = ""
@@ -74,9 +92,11 @@ local function redrawScreen()
 		if flip and y == cursorPosY then
 			line = replaceChar(line,cursorPosX+1,'_')
 		end
+		line = line:sub(screenPosX+1,screenPosX+screenWidth)
 		screen = screen..line.."\n"
 	end
-	line = "### ctrl-c to quit ### @ "..cursorPosX.." x "..cursorPosY.." # "..msg.." "
+	line = "### ctrl-c to quit,ctrl-s to save ### @ "..cursorPosX.." x "..cursorPosY.." # "..msg.." "
+	
 	line = line..string.rep('#',screenWidth-#line).."\n"
 	screen = screen..line
 	term.clear()
@@ -87,7 +107,11 @@ local function keyCallback(event)
 	local key = event.msg.msg
 --	print("key: "..key)
 
-	if key == "37:0:0" then
+	if key == "35:0:0" then -- end
+		cursorPosX = #lines[cursorPosY+1]+1
+	elseif key == "36:0:0" then -- home
+		cursorPosX = 0
+	elseif key == "37:0:0" then
 		cursorPosX = cursorPosX - 1
 	elseif key == "38:0:0" then
 		cursorPosY = cursorPosY - 1
@@ -95,9 +119,19 @@ local function keyCallback(event)
 		cursorPosX = cursorPosX + 1
 	elseif key == "40:0:0" then
 		cursorPosY = cursorPosY + 1
+	elseif key == "46:0:0" then -- delete
+		if cursorPosX+1 <= #lines[cursorPosY+1] then
+		msg = "A"
+			lines[cursorPosY+1] = removeChar(lines[cursorPosY+1],cursorPosX+1)
+		elseif cursorPosY+1 < #lines then
+			msg = "B"
+			local tmp = lines[cursorPosY+2]
+			table.remove(lines,cursorPosY+2)
+			lines[cursorPosY+1] = lines[cursorPosY+1]..tmp
+		end
 	elseif key == "8:0:0" then -- backspace
 		cursorPosX = cursorPosX - 1
-		if cursorPosX > -1 then
+		if cursorPosX >= 0 then
 			lines[cursorPosY+1] = removeChar(lines[cursorPosY+1],cursorPosX+1)
 		elseif cursorPosY > 0 then
 			local tmp = lines[cursorPosY+1]
@@ -112,15 +146,35 @@ local function keyCallback(event)
 		table.insert(lines,cursorPosY+2,tmp)
 		cursorPosY = cursorPosY+1
 		cursorPosX = 0
+	elseif key == "67:1:0" then -- ctrl-c
+		if madeChanges and not confirmed then
+			msg = "Press ctrl-c again to exit without saving."
+			confirmed = true
+		elseif (madeChanges and confirmed) or not madeChanges then
+			loop = false
+			
+		end
+		redrawScreen()
+		return true
+	elseif key == "83:1:0" then -- ctrl-s
+		fs.writeFile(filename,toString(lines))
+		msg = "Saved as '"..filename.."'."
+		madeChanges = false
 	elseif term.keyChars[key] ~= nil then
 		lines[cursorPosY+1] = insertChar(lines[cursorPosY+1],cursorPosX+1,term.keyChars[key])
 		cursorPosX = cursorPosX + 1
 		-- overwrite mode?
 		--lines[cursorPosY+1] = replaceChar(lines[cursorPosY+1],cursorPosX+1,term.keyChars[key])
+		madeChanges = true
+		msg = key
 	else
-		msg = "Unknown key '"..key.."'."
+		if key:split(":")[1] ~= 0 then
+			msg = "Unknown key '"..key.."'."
+		end
 	end
-
+	
+	confirmed = false
+	
 	if cursorPosX < 0 then cursorPosX = 0 end
 	if cursorPosY < 0 then cursorPosY = 0 end
 	if cursorPosY > #lines-1 then cursorPosY = #lines-1 end
@@ -154,4 +208,5 @@ while loop do
 end
 
 dronetest.events.unregister_listener(sys.id,listener)
+term.clear()
 return true

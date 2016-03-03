@@ -56,7 +56,7 @@ local reset_meta = function(pos)
 end
 dronetest_display = {}
 dronetest_display.actions = {
-	get_size = { desc= "returns size in characters", func = function() return 80,33 end }
+	get_size = { desc= "returns size in characters", func = function() return 80,37 end }
 }
 
 local on_digiline_receive = function(pos, node, channel, msg)

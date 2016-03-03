@@ -102,11 +102,15 @@ local function activate_by_id(id,t,pos)
 	env.sys.sandbox = env.mod_dir.."/"..id
 	local meta = minetest.get_meta(pos)
 	env.sys.channel = meta:get_string("channel")
+	
 	env.sys.type = t
 	env.table.copy = table.copy
 	-- overload print function to print to drone/computer's screen and not to servers stdout
 	env.print = function(msg) dronetest.print(id,msg) end
-
+	env.error_handler = function(err) 
+		dronetest.print(id,err) 
+		
+	end
 	local bootstrap,err = loadstring(dronetest.bootstrap)
 	if type(bootstrap) ~= "function" then minetest.log("error","bad bootstrap: "..err) error("bad bootstrap: "..err) end
 	
@@ -203,11 +207,13 @@ minetest.register_node("dronetest:computer", {
 				local meta = minetest.get_meta(pos)
 				local id = meta:get_int("id")
 				--print("computer #"..id.." received digiline: "..dump(msg))
-				if type(msg) == "table" and msg.type ~= nil then
-					msg.channel = channel
-					dronetest.events.send_by_id(id,msg)
-				else
-					dronetest.events.send_by_id(id,{type="digiline",channel=channel,msg=msg})
+				if dronetest.active_systems[id] ~= nil then
+					if type(msg) == "table" and msg.type ~= nil then
+						msg.channel = channel
+						xpcall(function() dronetest.events.send_by_id(id,msg) end,dronetest.active_systems[id].env.error_handler)
+					else
+						xpcall(function() dronetest.events.send_by_id(id,{type="digiline",channel=channel,msg=msg}) end,dronetest.active_systems[id].env.error_handler)
+					end
 				end
 			end
 		},

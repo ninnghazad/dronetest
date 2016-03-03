@@ -36,7 +36,7 @@ dronetest.userspace_environment = {
 	rep = string.rep, reverse = string.reverse, sub = string.sub, 
 	upper = string.upper, split = string.split },
 	table = { insert = table.insert, maxn = table.maxn, remove = table.remove, 
-	sort = table.sort },
+	sort = table.sort,concat = table.concat },
 	math = { abs = math.abs, acos = math.acos, asin = math.asin, 
 	atan = math.atan, atan2 = math.atan2, ceil = math.ceil, cos = math.cos, 
 	cosh = math.cosh, deg = math.deg, exp = math.exp, floor = math.floor, 
@@ -51,7 +51,10 @@ dronetest.userspace_environment.mod_name = dronetest.mod_name
 dronetest.userspace_environment.mod_dir = dronetest.mod_dir
 dronetest.userspace_environment.dump = dump
 dronetest.userspace_environment.pprint = pprint
-
+--[[dronetest.userspace_environment.error_handler = function(err)
+	dronetest.print(id,"ERROR: "..dump(err))
+	print("USERSPACE ERROR: "..dump(err)..dump(debug.traceback()))
+end--]]
 ---[[
 -- sandboxed stuff can only getfenv things it setfenv'ed
 dronetest.userspace_environment.getfenv = function(f)

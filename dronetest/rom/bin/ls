@@ -5,17 +5,32 @@ local dir
 if argv[1] ~= nil then 
 	dir = argv[1] 
 else
-	dir = fs.currentDir()
+	dir = "./"
 end
 local content = fs.list(dir)
 table.sort(content)
 print("'"..fs.getAbsolutePath(dir).."' total "..#content)
+local t,p,s,ss
+local sizes = {"B ","KB","MB","GB"}
 for k,v in pairs(content) do
-	local t = "D"
-	if fs.isFile(v) then
-		t = F
+	t = "D"
+	p = dir.."/"..v
+	if fs.isFile(p) then
+		t = "F"
 	end
-	print("    "..t.." "..v)
+	s = fs.size(p)
+	if not s then 
+		s = "-"
+	else
+		ss = 1
+		while #(" "..s) > 5 do
+			s = s/1024
+			ss = ss + 1
+		end
+		s = ""..math.floor(s)..sizes[ss]
+	end
+	
+	print("    "..t.." "..s.." "..v.." "..p)
 end
 
 return true

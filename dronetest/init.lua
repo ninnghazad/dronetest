@@ -17,6 +17,7 @@ dronetest = {
 	events = {},
 	console_histories = {},
 	active_systems = {},
+	max_disk_space = 1000000,
 	max_userspace_instructions = 1000000,
 	log = function(msg) 
 		msg = msg or "" 

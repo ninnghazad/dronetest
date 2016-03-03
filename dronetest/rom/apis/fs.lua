@@ -1,17 +1,6 @@
 -- FS API
 -- A save fs api, jailed to fsdir
 
--- This isn't the best spot for this, but make it so _makePath can see our current ID
--- needs to be before first use of the function!
-function _makePath(path)
-	local r = string.find(path,"%.%.")
-	if r ~= nil then
-		--print("Illegal path: "..path.." (error: "..r..")")
-		return ""
-	end
-	--print("env: "..dump(sys))
-	return mod_dir.."/"..sys.id.."/"..path
-end
 function _realPath(path)
 	local old = lfs.currentdir()
 	lfs.chdir(path)
@@ -19,9 +8,21 @@ function _realPath(path)
 	lfs.chdir(old)
 	return path
 end
+
+local max_disk_space = dronetest.max_disk_space
+local base_path = _realPath(mod_dir.."/"..sys.id)
+-- This isn't the best spot for this, but make it so _makePath can see our current ID
+-- needs to be before first use of the function!
+function _makePath(path)
+	p = _realPath(base_path.."/"..path)
+	print(p:sub(1,#base_path).."\n"..base_path.."\n"..p)
+	if p:sub(1,#base_path) ~= base_path then return base_path end
+	return p
+end
+
 function _hidePath(path) 
 	path = _realPath(path)
-	base = _realPath(mod_dir.."/"..sys.id)
+	base = _realPath(base_path)
 	path = string.gsub(path,base,"/")
 	path = path:gsub("//","/")
 	return path
@@ -35,6 +36,9 @@ end
 fs.isDir = function(path)
 	local p = _makePath(path)
 	if p == "" then return false end
+	if lfs.attributes(p,"mode") ~= nil then
+	print(path.." "..p.." "..lfs.attributes(p,"mode"))
+	end
 	if lfs.attributes(p,"mode") == "directory" then
 		return true
 	end
@@ -65,10 +69,19 @@ end
 fs.isFile = function(path)
 	local p = _makePath(path)
 	if p == "" then return false end
+--	if lfs.attributes(p,"mode") ~= nil then
+--	print(path.." "..lfs.attributes(p,"mode"))
+--	end
 	if lfs.attributes(p,"mode") == "file" then
 		return true
 	end
 	return false
+end
+
+fs.size = function(path)
+	local p = _makePath(path)
+	if p == "" then return false end
+	return lfs.attributes(p,"size")
 end
 
 fs.readFile = function(path)
@@ -80,6 +93,16 @@ fs.readFile = function(path)
 	io.input(p)
 	return io.read("*all")
 end
+
+fs.writeFile = function(path,string)
+	local p = _makePath(path)
+	if p == "" then return false end
+	if lfs.attributes(p,"mode") == "directory" then
+		return false
+	end
+	io.output(p)
+	return io.write(string)
+end
 fs.touch = function(path)
 	local p = _makePath(path)
 	if p == "" then return false end
@@ -90,12 +113,14 @@ fs.list = function(path)
 	if path == nil then path = "./" end
 	local p = _makePath(path)
 	if not fs.isDir(path) then return {} end
-	print("LS: "..p.." || "..path)
+	--print("LS: "..p.." || "..path)
 	local list = {}
 	local old = lfs.currentdir()
-	lfs.chdir(mod_dir.."/"..sys.id)
+	lfs.chdir(base_path)
 	for filename in lfs.dir(p) do
-		table.insert(list,filename)
+		if p ~= base_path or filename ~= ".." then
+			table.insert(list,filename)
+		end
 	end
 	lfs.chdir(old)
 	return list
