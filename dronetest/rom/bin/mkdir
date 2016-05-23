@@ -11,6 +11,7 @@ end
 if string.sub(dir,1,1) ~= "/" then
 	dir = fs.currentDir().."/"..dir
 end
-dir = fs.getAbsolutePath(dir)
+print("mkdir arg="..dir)
+--dir = fs.getAbsolutePath(dir)
 print("creating directory "..dir)
 return fs.makeDir(dir)

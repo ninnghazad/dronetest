@@ -37,7 +37,6 @@ end
 shell.cursorPos = {1,1}
 
 
-
 -- Shell main loop
 function shell.main(env)
 	print("main")

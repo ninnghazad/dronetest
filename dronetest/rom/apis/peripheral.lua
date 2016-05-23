@@ -25,7 +25,7 @@ function peripheral.wrap(channel,timeout)
 	-- create functions to execute actions the peripheral offered
 	local newp = {}
 	for name,desc in pairs(e.msg) do
-		print("wrap peripheral's method "..name..": "..desc)
+		print("wrap peripheral's method "..name..": "..dump(desc))
 		newp[name] = function(a,b,c,d,e)
 			local pos = dronetest.active_systems[sys.id].pos
 			local msg_id = sys:getUniqueId() 

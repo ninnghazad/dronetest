@@ -1,0 +1,6 @@
+local channel = argv[1]
+local pos = dronetest.active_systems[sys.id].pos
+
+print(sys:waitForDigilineMessage(channel,0,4))
+
+return true

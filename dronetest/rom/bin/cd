@@ -1,0 +1,13 @@
+-- cd
+-- changes directory
+
+local dir
+
+if argv[1] ~= nil then 
+	dir = argv[1] 
+else
+	dir = "./"
+end
+local r,err = fs.chDir(dir)
+if not r then print(err) end
+return true

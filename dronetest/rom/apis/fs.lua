@@ -14,17 +14,39 @@ local base_path = _realPath(mod_dir.."/"..sys.id)
 -- This isn't the best spot for this, but make it so _makePath can see our current ID
 -- needs to be before first use of the function!
 function _makePath(path)
-	p = _realPath(base_path.."/"..path)
-	print(p:sub(1,#base_path).."\n"..base_path.."\n"..p)
+	p = _canonicalizePath(base_path.."/"..path)
+--	print("_makePath: "..p:sub(1,#base_path).."\n"..base_path.."\n"..p)
 	if p:sub(1,#base_path) ~= base_path then return base_path end
 	return p
 end
 
+function _isAbs(path)
+	if path:len() == 0 then return false end
+	if path:sub(1,1) == "/" then return true end
+	return false
+end
+
+function _canonicalizePath(path)
+	if not _isAbs(path) then path = lfs.currentdir().."/"..path end
+	r = {}
+	for p in path:gmatch("[^/]+") do
+		if p:len() < 1 then 
+		elseif p == "." then 
+		elseif p == ".." and #r > 0 then 
+			r[#r] = nil 
+		else
+			r[#r+1] = p
+		end
+	end
+	return "/"..table.concat(r,"/")
+end
+
 function _hidePath(path) 
-	path = _realPath(path)
-	base = _realPath(base_path)
+	path = _canonicalizePath(path)
+	base = _canonicalizePath(base_path)
+--	print("_hidePath: base="..base.." path="..path)
 	path = string.gsub(path,base,"/")
-	path = path:gsub("//","/")
+	path = string.gsub(path,"//","/")
 	return path
 end
 
@@ -37,7 +59,7 @@ fs.isDir = function(path)
 	local p = _makePath(path)
 	if p == "" then return false end
 	if lfs.attributes(p,"mode") ~= nil then
-	print(path.." "..p.." "..lfs.attributes(p,"mode"))
+		print(path.." "..p.." "..lfs.attributes(p,"mode"))
 	end
 	if lfs.attributes(p,"mode") == "directory" then
 		return true
@@ -62,7 +84,6 @@ fs.chDir = function(path)
 end
 
 fs.currentDir = function()
-	
 	return _hidePath(lfs.currentdir())
 end
 
@@ -127,7 +148,9 @@ fs.list = function(path)
 end
 
 fs.makeDir = function(path)
+	print("fs.makeDir: arg="..path.." canon=".._canonicalizePath(path))
 	local p = _makePath(path)
+	path = _hidePath(_canonicalizePath(path))
 	if p == "" then return false,"illegal path '"..path.."'" end
 	local r,err = lfs.mkdir(p)
 	if not r then print(sys.id.." Could not create directory '"..path.."': "..err) return false,err end
