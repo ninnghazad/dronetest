@@ -201,18 +201,21 @@ minetest.register_node("dronetest:computer", {
 	
 	
 	digiline = {
+		wire = {basename="dronetest:computer"},
 		receptor = {},
 		effector = {
 			action = function(pos, node, channel, msg) -- add incoming digiline-msgs to event-queue
 				local meta = minetest.get_meta(pos)
 				local id = meta:get_int("id")
 				--print("computer #"..id.." received digiline: "..dump(msg))
-				if dronetest.active_systems[id] ~= nil then
-					if type(msg) == "table" and msg.type ~= nil then
-						msg.channel = channel
-						xpcall(function() dronetest.events.send_by_id(id,msg) end,dronetest.active_systems[id].env.error_handler)
-					else
-						xpcall(function() dronetest.events.send_by_id(id,{type="digiline",channel=channel,msg=msg}) end,dronetest.active_systems[id].env.error_handler)
+				if meta:get_string("channel") == channel then
+					if dronetest.active_systems[id] ~= nil then
+						if type(msg) == "table" and msg.type ~= nil then
+							msg.channel = channel
+							xpcall(function() dronetest.events.send_by_id(id,msg) end,dronetest.active_systems[id].env.error_handler)
+						else
+							xpcall(function() dronetest.events.send_by_id(id,{type="digiline",channel=channel,msg=msg}) end,dronetest.active_systems[id].env.error_handler)
+						end
 					end
 				end
 			end

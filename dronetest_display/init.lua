@@ -135,7 +135,7 @@ minetest.register_node("dronetest_display:display", {
 			meta:set_string("channel",fields.channel)
 		end
 		if fields["proxy"] ~= nil and fields["proxy"] ~= "" then
-		--	dronetest.log("drontest_display: keypress '"..fields["proxy"].."'")
+			dronetest.log("drontest_display: keypress '"..fields["proxy"].."' will be sent to "..meta:get_string("channel"))
 			digiline:receptor_send(pos,digiline.rules.default,meta:get_string("channel"),{type="key",msg={msg=fields["proxy"],msg_id=0}})
 			return true
 		end
