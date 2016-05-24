@@ -185,12 +185,12 @@ function shell.run(cmd,argv,env,env_global)
 	if env == nil then env = _G end
 	argv = argv or {}
 	-- TODO: write real cli parser
-	local f,err = loadfile(mod_dir.."/"..sys.id.."/"..cmd)
+	local f,err = loadfile(minetest.get_worldpath().."/"..sys.id.."/"..cmd)
 	
 	if f == nil then
 		f,err = loadfile(mod_dir.."/rom/bin/"..cmd)
 		if f == nil then
-			print("ERROR: no such file or buggy file '"..cmd.."': "..err)
+			print("WARN: no such file or buggy file '"..cmd.."': "..err)
 			return false
 		end
 		--print("shell.run from rom: "..mod_dir.."/rom/bin/"..cmd)
@@ -201,7 +201,7 @@ function shell.run(cmd,argv,env,env_global)
 			if env[k] == nil then env[k] = v end 
 		end
 	else
-		--print("shell.run from home for #"..sys.id..": "..mod_dir.."/"..sys.id.."/"..cmd)
+		--print("shell.run from home for #"..sys.id..": "..minetest.get_worldpath().."/"..sys.id.."/"..cmd)
 		print("shell.run from home for #"..sys.id..": /"..cmd)
 	end
 	

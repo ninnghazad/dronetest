@@ -2,6 +2,7 @@
 -- Sys userspace API
 dronetest.sys = {}
 dronetest.sys.id = 0
+dronetest.sys.currentDir = ""
 dronetest.sys.last_msg_id = 0
 dronetest.sys.yield = coroutine.yield
 dronetest.sys.getTime = function()

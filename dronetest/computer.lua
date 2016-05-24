@@ -87,7 +87,15 @@ function timeout()
 	print("SUCH TIMEOUT! VERY WAIT! MUCH SLOW!")
 	coroutine.yield()
 end
-
+local function readonlytable(table)
+   return setmetatable({}, {
+     __index = table,
+     __newindex = function(table, key, value)
+                    error("Attempt to modify read-only table")
+                  end,
+     __metatable = false
+   });
+end
 local function activate_by_id(id,t,pos)
 	if pos == nil then pos = {x=0,y=0,z=0} end
 	if t == nil then t = "drone" end
@@ -99,7 +107,10 @@ local function activate_by_id(id,t,pos)
 	-- HORRIBLE PLACE TO PUT ID
 	env.sys.id = 1+id-1
 	-- HORRIBLE PLACE TO PUT SANDBOX PATH
-	env.sys.sandbox = env.mod_dir.."/"..id
+	env.sys.sandbox =  minetest.get_worldpath().."/"..id
+--	env.sys.baseDir =  minetest.get_worldpath().."/"..id
+--	env.baseDir =  minetest.get_worldpath().."/"..id
+
 	local meta = minetest.get_meta(pos)
 	env.sys.channel = meta:get_string("channel")
 	
@@ -115,6 +126,9 @@ local function activate_by_id(id,t,pos)
 	if type(bootstrap) ~= "function" then minetest.log("error","bad bootstrap: "..err) error("bad bootstrap: "..err) end
 	
 	env._G = env
+
+	--env = readonlytable(env)
+
 	jit.off(bootstrap,true)
 	setfenv(bootstrap,env)
 	local function error_handler(err)
@@ -244,7 +258,7 @@ minetest.register_node("dronetest:computer", {
 		meta:set_string("infotext", "Computer #"..dronetest.last_id )
 		meta:set_int("status",0)
 		meta:set_string("channel",channel)
-		mkdir(dronetest.mod_dir.."/"..dronetest.last_id)
+		mkdir(minetest.get_worldpath().."/"..dronetest.last_id)
 		dronetest.log("Computer #"..dronetest.last_id.." constructed at "..minetest.pos_to_string(pos))		
 		if not minetest.forceload_block(pos) then
 			dronetest.log("WARNING: Could not forceload block at "..dump(pos)..".")

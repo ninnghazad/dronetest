@@ -10,7 +10,7 @@ function _makePath(path)
 		return ""
 	end
 	print("env: "..dump(sys))
-	return mod_dir.."/"..sys.id.."/"..path
+	return  minetest.get_worldpath().."/"..sys.id.."/"..path
 end
 
 

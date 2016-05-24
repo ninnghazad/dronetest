@@ -1,6 +1,6 @@
 -- FS API
 -- A save fs api, jailed to fsdir
-
+--[[
 function _realPath(path)
 	local old = lfs.currentdir()
 	lfs.chdir(path)
@@ -8,15 +8,17 @@ function _realPath(path)
 	lfs.chdir(old)
 	return path
 end
+--]]
 
 local max_disk_space = dronetest.max_disk_space
-local base_path = _realPath(mod_dir.."/"..sys.id)
+local baseDir = minetest.get_worldpath().."/"..sys.id
+
 -- This isn't the best spot for this, but make it so _makePath can see our current ID
 -- needs to be before first use of the function!
 function _makePath(path)
-	p = _canonicalizePath(base_path.."/"..path)
---	print("_makePath: "..p:sub(1,#base_path).."\n"..base_path.."\n"..p)
-	if p:sub(1,#base_path) ~= base_path then return base_path end
+	p = _canonicalizePath(baseDir.."/"..path)
+--	print("_makePath: "..p:sub(1,#baseDir).."\n"..baseDir.."\n"..p)
+	if p:sub(1,#baseDir) ~= baseDir then return baseDir end
 	return p
 end
 
@@ -27,7 +29,7 @@ function _isAbs(path)
 end
 
 function _canonicalizePath(path)
-	if not _isAbs(path) then path = lfs.currentdir().."/"..path end
+	if not _isAbs(path) then path = sys.currentDir.."/"..path end
 	r = {}
 	for p in path:gmatch("[^/]+") do
 		if p:len() < 1 then 
@@ -43,7 +45,7 @@ end
 
 function _hidePath(path) 
 	path = _canonicalizePath(path)
-	base = _canonicalizePath(base_path)
+	base = _canonicalizePath(baseDir)
 --	print("_hidePath: base="..base.." path="..path)
 	path = string.gsub(path,base,"/")
 	path = string.gsub(path,"//","/")
@@ -80,11 +82,15 @@ end
 fs.chDir = function(path)
 	local p = _makePath(path)
 	if p == "" then return false end
-	return lfs.chdir(p)
+	if fs.isDir(p) then
+		sys.currentDir = p
+		return true
+	end
+	return false
 end
 
 fs.currentDir = function()
-	return _hidePath(lfs.currentdir())
+	return _hidePath(sys.currentDir)
 end
 
 fs.isFile = function(path)
@@ -136,14 +142,11 @@ fs.list = function(path)
 	if not fs.isDir(path) then return {} end
 	--print("LS: "..p.." || "..path)
 	local list = {}
-	local old = lfs.currentdir()
-	lfs.chdir(base_path)
 	for filename in lfs.dir(p) do
-		if p ~= base_path or filename ~= ".." then
+		if p ~= baseDir or filename ~= ".." then
 			table.insert(list,filename)
 		end
 	end
-	lfs.chdir(old)
 	return list
 end
 
