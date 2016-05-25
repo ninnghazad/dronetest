@@ -99,7 +99,7 @@ dronetest.userspace_environment.coroutine.create = function(f)
 	jit.off(f,true)
 	local e = getfenv(2)
 	setfenv(f,e)
-	local ff = function() xpcall(f,function(msg) if msg == "attempt to yield across C-call boundary" then msg = "too many instructions without yielding" end dronetest.print(e.sys.id,"Error in coroutine: '"..msg.."':"..dump(debug.traceback())) coroutine.yield() end) end
+	local ff = function() xpcall(f,function(msg) if msg == "attempt to yield across C-call boundary" then msg = "too many instructions without yielding" end dronetest.print(e.dronetest.current_id,"Error in coroutine: '"..msg.."':"..dump(debug.traceback())) coroutine.yield() end) end
 	local co = coroutine.create(ff)
 	return co
 end
@@ -113,13 +113,18 @@ end
 
 
 dronetest.userspace_environment.loadfile = function(s)
-	local f,err = loadfile(s)
+	print("nonono, not allowed atm!")
+	function f() end
+	return f,"access denied"
+--[[
+	local f,err = loadfile(s)	
 	if f == nil then
 		print(err)
 		return nil,err
 	end
 	setfenv(f,getfenv(1))
 	return f,""
+--]]
 end
 
 dronetest.userspace_environment.loadstring = function(s)

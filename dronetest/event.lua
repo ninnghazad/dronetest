@@ -5,28 +5,45 @@ dronetest.events.listeners = {}
 dronetest.events.send_by_id = function(id,event)
 	if dronetest.active_systems[id] ~= nil then
 		--print("send event for #"..id.." "..dump(event))
+		if event.msg_id == nil then
+			event.msg_id = 0
+		end
+
+		if type(event.msg) ~= table then
+			print("send event for #"..id.." "..dump(event))
+--			local tmp = event.msg
+--			event.msg = {}
+--			event.msg.msg_id = 0
+--			event.msg.msg = tmp
+		end
+		if event.channel == "rtc" then
+			print("NNNNNNNNNYYYYYYYYAAAAAAAAANNNNNNNN")
+			print(dump(dronetest.events.callbacks[id]))
+			print(dump(dronetest.events.listeners[id]))
+		end
 		if type(dronetest.events.callbacks[id]) == "table" then
 			local sent = false
 			for _j,callback in pairs(dronetest.events.callbacks[id]) do
 				for _i,f in pairs(callback.filter) do
 					if event.type ~= nil and event.type == f then
-						if type(event.msg) ~= table and callback.func ~= nil and callback.msg_id ~= event.msg.msg_id then
-							callback.func(event)
-							sent = true
-						elseif event.msg.msg_id ~= nil and callback.msg_id == event.msg.msg_id then
-							callback.func(event)
-							dronetest.events.callbacks[id][_i] = nil
-							sent = true
+						print("call callback")
+						if type(event.msg) ~= table and callback.func ~= nil then --and callback.msg_id ~= event.msg.msg_id then
+							sent = callback.func(event)
+
+						elseif event.msg_id ~= nil and callback.msg_id == event.msg_id then
+							sent = callback.func(event)
 						else
-							callback.func(event)
-							sent = true
+							sent = callback.func(event)
+						end
+						if sent == nil or sent then 
+							dronetest.events.callbacks[id][_i] = nil
+							return true 
 						end
 						
 					
 					end
 				end
 			end
-			if sent then return true end
 		end
 		
 		if type(dronetest.events.listeners[id]) == "table" then
@@ -34,15 +51,13 @@ dronetest.events.send_by_id = function(id,event)
 			for _f,listener in pairs(dronetest.events.listeners[id]) do
 				for _i,f in pairs(listener.filter) do
 					if event.type ~= nil and event.type == f then
-						--for _j,listener in pairs(listeners) do
-							listener.func(event)
-							sent = true
-						--end
+						sent = listener.func(event)
+						if sent == nil or sent then return true end
 					end
 				end
 			end
-			if sent then return true end
 		end
+		print("keep event around, now "..#dronetest.active_systems[id].events.." events")
 		table.insert(dronetest.active_systems[id].events,table.copy(event))
 	else
 		return false
@@ -50,8 +65,18 @@ dronetest.events.send_by_id = function(id,event)
 	return true
 end
 
-dronetest.events.register_listener = function(id,filter,func)
-	local listener = {filter=filter,func = func}
+dronetest.events.register_listener = function(id,filter,func,channel)
+	if channel == nil then
+		channel = minetest.get_meta(dronetest.active_systems[id].pos):get_string("channel")
+	end
+	local f = function(event) 
+		if event.channel ~= channel then
+			return false
+		end
+		return func(event)
+	end
+	local listener = {filter=filter,func = f}
+	print(id.." listens on channel "..channel.." for filter "..dump(filter))
 	if type(dronetest.events.listeners[id]) ~= "table" then 
 		dronetest.events.listeners[id] = {}
 	end
@@ -89,7 +114,10 @@ dronetest.events.wait_for_receive = function(id,filter,channel,msg_id,timeout)
 	timeout = timeout or 4
 	msg_id = msg_id or 0
 	
-	--print("WAIT FOR DIGILINE #"..id)
+--	print("WAIT FOR DIGILINE #"..id.." f: "..dump(filter).." c: "..dump(channel).." mid: "..dump(msg_id).." t: "..timeout)
+--	if channel == "011" then
+--		print(dump(dronetest.active_systems[id].events))
+--	end
 	--print("waiting, events left: "..dronetest.count(dronetest.active_systems[id].events))
 	if dronetest.active_systems[id] == nil then
 		dronetest.log("BUG: dronetest.events.wait_for_receive on inactive system.")
@@ -103,18 +131,20 @@ dronetest.events.wait_for_receive = function(id,filter,channel,msg_id,timeout)
 	local event = nil
 	local result = dronetest.events.receive(id,filter,channel,msg_id)
 	if result ~= nil then 
-		--print("nowait: "..dump(result))
+		print("no need to wait,instant receive: "..dump(result))
 		return result 
 	end
 	
 	local function callback(event) 
 		print("callback, events left: "..dronetest.count(dronetest.active_systems[id].events))
-	
+		if channel ~= nil and event.channel ~= channel then
+			return false
+		end
 	--	print("callback 0: "..msg_id)
-		if (msg_id == nil or (type(event.msg)=="table" and type(event.msg.msg_id) ~= "string" and event.msg.msg_id == msg_id)) then
+	--	if (msg_id == nil or (type(event.msg)=="table" and type(event.msg.msg_id) ~= "string" and event.msg.msg_id == msg_id)) then
 	--		print("callback "..msg_id)
 			result = event 
-		end
+	--	end
 	--	result = event
 		return true
 	end
@@ -122,7 +152,8 @@ dronetest.events.wait_for_receive = function(id,filter,channel,msg_id,timeout)
 	if type(dronetest.events.callbacks[id]) ~= "table" then dronetest.events.callbacks[id] = {} end
 	--if type(dronetest.events.callbacks[id][msg_id]) ~= "table" then dronetest.events.callbacks[id][msg_id]= {} end
 	
-	table.insert(dronetest.events.callbacks[id],{filter=filter,func=callback,msg_id=msg_id})
+	table.insert(dronetest.events.callbacks[id],{filter=filter,func=callback,msg_id=msg_id,channel=channel})
+	print("inserted callback")
 	local callbackId = #dronetest.events.callbacks[id]
 	local s = 0.05
 	local time = minetest.get_gametime()
@@ -138,26 +169,33 @@ dronetest.events.wait_for_receive = function(id,filter,channel,msg_id,timeout)
 	
 --	if dronetest.count(dronetest.events.callbacks[id][filter]) <= 0 then dronetest.events.callbacks[id][filter] = {} end
 --	if dronetest.count(dronetest.events.callbacks[id]) <= 0 then dronetest.events.callbacks[id] = {} end
-	print("finished waiting, events left: "..dronetest.count(dronetest.active_systems[id].events))
+	print("finished "..dump(id).." waiting, events left: "..dronetest.count(dronetest.active_systems[id].events))
 	return result
 end
 
 dronetest.events.receive = function(id,filter,channel,msg_id)
-	if dronetest.active_systems[id] == nil or #dronetest.active_systems[id].events == 0 then
+	if dronetest.active_systems[id] == nil or dronetest.count(dronetest.active_systems[id].events) == 0 then
 		return nil
 	end
+	print("receive: "..id.." "..dump(channel).." "..dump(msg_id).." "..dump(filter).." "..dump(dronetest.active_systems[id].events))
 	if type(filter) ~= "table" then filter = {} end
 	if #filter > 0 then
 		for i,e in pairs(dronetest.active_systems[id].events) do
 			for j,f in pairs(filter) do
+	
 				if e.type ~= nil and e.type == f then
+					print("check: "..e.type)
+					print(type(e.msg_id).." "..type(msg_id))
+					print(type(e.channel).." "..type(channel))
 					--if e.type == "digiline" and channel ~= nil and type(e.channel) == "string" and channel ~= e.channel 
-					if channel ~= nil and type(e.channel) == "string" and channel ~= e.channel 
-					and (msg_id == nil or (type(e.msg)=="table" and type(e.msg.msg_id) == "string" and e.msg.msg_id ~= msg_id)) then
-						
+					if (channel ~= nil and type(e.channel) == "string" and channel ~= e.channel)
+					or (type(e)=="table" and type(e.msg_id) == "string" and e.msg_id ~= msg_id) then
+						print("nope, filtered out")
 					else
+						local event = table.copy(e)
 						table.remove(dronetest.active_systems[id].events,i)
-						return e
+						print("receive will return event "..dump(event))
+						return event
 					end
 				end
 			end

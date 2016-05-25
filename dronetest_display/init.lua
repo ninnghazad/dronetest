@@ -52,7 +52,7 @@ local prepare_writing = function(pos)
 end
 
 local reset_meta = function(pos)
-	minetest.get_meta(pos):set_string("formspec", "size[6,1]keyeventbox[0.3,0.4;1,1;proxy;keyboard.png;keyboardActive.png]field[1.3,0.4;5,1;channel;Channel;${channel}]")
+	minetest.get_meta(pos):set_string("formspec", "size[13,1]keyeventbox[0.3,0.4;1,1;proxy;keyboard.png;keyboardActive.png]field[1.3,0.4;5,1;channel;Channel;${channel}]field[7.3,0.4;5,1;displayChannel;Display Channel;${displayChannel}]")
 end
 dronetest_display = {}
 dronetest_display.actions = {
@@ -62,7 +62,7 @@ dronetest_display.actions = {
 local on_digiline_receive = function(pos, node, channel, msg)
 	local n,v
 	local meta = minetest.get_meta(pos)
-	local setchan = meta:get_string("channel")
+	local setchan = meta:get_string("displayChannel")
 	if setchan ~= channel then return end
 	if type(msg) == "table" and type(msg.action) == "string" then
 		if msg.action == "GET_CAPABILITIES"  and type(msg.msg_id) == "string" then
@@ -134,9 +134,12 @@ minetest.register_node("dronetest_display:display", {
 		--	dronetest.log("drontest_display: channel change to "..fields["channel"])
 			meta:set_string("channel",fields.channel)
 		end
+		if fields["displayChannel"] ~= nil then
+			meta:set_string("displayChannel",fields.displayChannel)
+		end
 		if fields["proxy"] ~= nil and fields["proxy"] ~= "" then
 			dronetest.log("drontest_display: keypress '"..fields["proxy"].."' will be sent to "..meta:get_string("channel"))
-			digiline:receptor_send(pos,digiline.rules.default,meta:get_string("channel"),{type="key",msg={msg=fields["proxy"],msg_id=0}})
+			digiline:receptor_send(pos,digiline.rules.default,meta:get_string("channel"),{type="key",msg=fields["proxy"]})
 			return true
 		end
 		reset_meta(pos)

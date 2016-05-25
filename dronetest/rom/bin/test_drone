@@ -8,7 +8,7 @@ local function shakeit(channel)
 	print("DRONE "..channel.." GETTING DOWN NOW!")
 	local r
 	while true do
-		--print("### 0 "..sys.id.." "..getId())
+		--print("### 0 "..dronetest.current_id.." "..getId())
 		sys.yield()
 
 		if sys:receiveEvent({"input"}) ~= nil then

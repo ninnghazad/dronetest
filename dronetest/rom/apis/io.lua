@@ -10,7 +10,7 @@ function _makePath(path)
 		return ""
 	end
 	print("env: "..dump(sys))
-	return  minetest.get_worldpath().."/"..sys.id.."/"..path
+	return  minetest.get_worldpath().."/"..dronetest.current_id.."/"..path
 end
 
 
@@ -48,7 +48,7 @@ fs.list = function(path)
 	local p = _makePath(path)
 	if not fs.isDir(path) then return {} end
 	local list = {}
-	lfs.chdir(mod_dir.."/"..sys.id)
+	lfs.chdir(mod_dir.."/"..dronetest.current_id)
 	for filename in lfs.dir(p) do
 		table.insert(list,filename)
 	end
@@ -60,7 +60,7 @@ fs.makeDir = function(path)
 	print("fs.makeDir('"..path.."'): "..p)
 	if p == "" then return false,"illegal path '"..path.."'" end
 	local r,err = lfs.mkdir(p)
-	if not r then print(sys.id.." Could not create directory '"..path.."': "..err) return false,err end
+	if not r then print(dronetest.current_id.." Could not create directory '"..path.."': "..err) return false,err end
 	return fs.isDir(p)
 end
 

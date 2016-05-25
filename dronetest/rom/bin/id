@@ -1,2 +1,2 @@
-print("This system's id is "..sys.id..", it is of type "..sys.type..".")
+print("This system's id is "..dronetest.current_id..", it is of type "..sys.type..".")
 return true

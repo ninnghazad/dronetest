@@ -6,7 +6,7 @@ local function shakeit(channel)
 	print("DRONE "..channel..": I don't think i will ever come back.")
 	local r
 	while true do
-		--print("### 0 "..sys.id.." "..getId())
+		--print("### 0 "..dronetest.current_id.." "..getId())
 		sys.yield()
 
 		if sys:receiveEvent({"key"}) ~= nil then

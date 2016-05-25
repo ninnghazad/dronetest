@@ -1,24 +1,25 @@
 
-local function get_computer_formspec(id,channel)
+local function get_computer_formspec(id,channel,displayChannel)
 	local formspec =
-		"size[11,1]"..
+		"size[14,1]"..
 --		default.gui_bg..
 --		default.gui_bg_img..
 --		default.gui_slots..
 		"keyeventbox[0.3,0.4;1,1;proxy;keyboard.png;keyboardActive.png]"..
 		"field[1.3,0.7;6,1;input;;]"..
 		"field[7.3,0.7;2,1;channel;channel;"..channel.."]"..
-		"button[9,0.4;1,1;execute;EXE]"..
+		"field[9.3,0.7;2,1;displayChannel;displayChannel;"..displayChannel.."]"..
+		"button[11.3,0.4;1,1;execute;EXE]"..
 		"label[1.3,0.0;COMPUTER_ID: "..id.."]"
-		if dronetest.active_systems[id] ~= nil then formspec = formspec.."button[10,0.4;1,1;poweroff;OFF]" 
-		else formspec = formspec.."button[10,0.4;1,1;poweron;ON]" end
+		if dronetest.active_systems[id] ~= nil then formspec = formspec.."button[12.7,0.4;1,1;poweroff;OFF]" 
+		else formspec = formspec.."button[12.7,0.4;1,1;poweron;ON]" end
 	return formspec
 end
 
 local function redraw_computer_formspec(pos,player)
 	local meta = minetest.get_meta(pos)
 	
-	local formspec = get_computer_formspec(meta:get_int("id"),meta:get_string("channel"))
+	local formspec = get_computer_formspec(meta:get_int("id"),meta:get_string("channel"),meta:get_string("displayChannel"))
 	meta:set_string("formspec",formspec)
 	
 --	minetest.show_formspec(player:get_player_name(),"dronetest:computer",formspec)
@@ -27,7 +28,10 @@ end
 function dronetest.print(id,msg,nonewline)
 	if nonewline == nil then nonewline = false end
 	if msg == nil then
-		return
+		msg = "nil"
+	end
+	if type(msg) ~= "string" then 
+		msg = type(msg)..": ["..dump(msg).."]"
 	end
 	if dronetest.console_histories[id] == nil then
 		dronetest.console_histories[id] = ""
@@ -51,7 +55,7 @@ function dronetest.print(id,msg,nonewline)
 	-- update display, not quite as it should be
 	if dronetest.active_systems[id] ~= nil then
 		-- TODO: limit updates per second
-		local channel = minetest.get_meta(dronetest.active_systems[id].pos):get_string("channel")
+		local channel = minetest.get_meta(dronetest.active_systems[id].pos):get_string("displayChannel")
 		--print("send print to "..channel)
 		digiline:receptor_send(dronetest.active_systems[id].pos, digiline.rules.default, channel, dronetest.history_list(id))
 		--digiline:receptor_send(dronetest.active_systems[id].pos, digiline.rules.default,"dronetest:computer:"..id, dronetest.console_histories[id])
@@ -101,23 +105,28 @@ local function activate_by_id(id,t,pos)
 	if t == nil then t = "drone" end
 	-- http://lua-users.org/wiki/SandBoxes
 	local env = table.copy(dronetest.userspace_environment)
+	
 	env.getId = function() return id end
 	
 	env.sys = table.copy(dronetest.sys)
-	-- HORRIBLE PLACE TO PUT ID
-	env.sys.id = 1+id-1
+--	-- HORRIBLE PLACE TO PUT ID
+--	env.dronetest.current_id = 1+id-1
 	-- HORRIBLE PLACE TO PUT SANDBOX PATH
-	env.sys.sandbox =  minetest.get_worldpath().."/"..id
+--	env.sys.sandbox =  minetest.get_worldpath().."/"..id
 --	env.sys.baseDir =  minetest.get_worldpath().."/"..id
 --	env.baseDir =  minetest.get_worldpath().."/"..id
 
+	
 	local meta = minetest.get_meta(pos)
 	env.sys.channel = meta:get_string("channel")
+	env.sys.displayChannel = meta:get_string("displayChannel")
 	
 	env.sys.type = t
 	env.table.copy = table.copy
 	-- overload print function to print to drone/computer's screen and not to servers stdout
-	env.print = function(msg) dronetest.print(id,msg) end
+	env.print = function(msg) 
+		dronetest.print(id,msg) 
+	end
 	env.error_handler = function(err) 
 		dronetest.print(id,err) 
 		
@@ -127,7 +136,7 @@ local function activate_by_id(id,t,pos)
 	
 	env._G = env
 
-	--env = readonlytable(env)
+	--env.sys = readonlytable(env.sys)
 
 	jit.off(bootstrap,true)
 	setfenv(bootstrap,env)
@@ -221,17 +230,17 @@ minetest.register_node("dronetest:computer", {
 			action = function(pos, node, channel, msg) -- add incoming digiline-msgs to event-queue
 				local meta = minetest.get_meta(pos)
 				local id = meta:get_int("id")
-				--print("computer #"..id.." received digiline: "..dump(msg))
-				if meta:get_string("channel") == channel then
+				--if meta:get_string("channel") == channel then
+					print("computer #"..id..", channel: "..channel..", received digiline: "..dump(msg))
 					if dronetest.active_systems[id] ~= nil then
-						if type(msg) == "table" and msg.type ~= nil then
+						if type(msg) == "table" and msg.type ~= nil and (((msg.type == "key" or msg.type == "input") and meta:get_string("channel")) or not (msg.type == "key" or msg.type == "input")) then
 							msg.channel = channel
 							xpcall(function() dronetest.events.send_by_id(id,msg) end,dronetest.active_systems[id].env.error_handler)
 						else
-							xpcall(function() dronetest.events.send_by_id(id,{type="digiline",channel=channel,msg=msg}) end,dronetest.active_systems[id].env.error_handler)
+							xpcall(function() dronetest.events.send_by_id(id,{type="digiline",channel=channel,msg=msg,msg_id=0}) end,dronetest.active_systems[id].env.error_handler)
 						end
 					end
-				end
+				--end
 			end
 		},
 	},
@@ -253,11 +262,13 @@ minetest.register_node("dronetest:computer", {
 		dronetest.last_id = dronetest.last_id + 1
 		local meta = minetest.get_meta(pos)
 		local channel = "dronetest:computer:"..dronetest.last_id
+		local displayChannel = "dronetest:computer:"..dronetest.last_id..":display"
 		meta:set_int("id",dronetest.last_id )
-		meta:set_string("formspec",get_computer_formspec(dronetest.last_id,channel))
+		meta:set_string("formspec",get_computer_formspec(dronetest.last_id,channel,displayChannel))
 		meta:set_string("infotext", "Computer #"..dronetest.last_id )
 		meta:set_int("status",0)
 		meta:set_string("channel",channel)
+		meta:set_string("displayChannel",displayChannel)
 		mkdir(minetest.get_worldpath().."/"..dronetest.last_id)
 		dronetest.log("Computer #"..dronetest.last_id.." constructed at "..minetest.pos_to_string(pos))		
 		if not minetest.forceload_block(pos) then
@@ -281,6 +292,12 @@ minetest.register_node("dronetest:computer", {
 			meta:set_string("channel",fields.channel)
 			if dronetest.active_systems[id] ~= nil then
 				dronetest.active_systems[id].env.sys.channel = meta:get_string("channel")
+			end	
+		end
+		if fields["displayChannel"] ~= nil then
+			meta:set_string("displayChannel",fields.displayChannel)
+			if dronetest.active_systems[id] ~= nil then
+				dronetest.active_systems[id].env.sys.displayChannel = meta:get_string("displayChannel")
 			end	
 		end
 		if fields["clear"] ~= nil then
@@ -314,7 +331,7 @@ minetest.register_node("dronetest:computer", {
 			return true
 		elseif fields["proxy"] ~= nil and fields["proxy"] ~= "" then
 			print("received keyboard event through proxy: "..fields["proxy"])
-			dronetest.events.send_by_id(id,{type="key",msg={msg=fields["proxy"],msg_id=0}})
+			dronetest.events.send_by_id(id,{type="key",msg=fields["proxy"]})
 			return true
 		end
 		
@@ -353,6 +370,7 @@ minetest.register_globalstep(function(dtime)
 		for i = 1,dronetest.cycles_per_step,1 do
 		--minetest.chat_send_all("dronetest globalstep @"..timer.." with "..count(dronetest.active_systems).." systems.")
 		for id,s in pairs(dronetest.active_systems) do
+			dronetest.current_id = id
 			co = s.coroutine_handle
 			--dronetest.log("Tic drone #"..id..". "..coroutine.status(co))
 			-- TODO: some kind of timeout?!

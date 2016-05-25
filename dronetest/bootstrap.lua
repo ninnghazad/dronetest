@@ -1,7 +1,7 @@
 -- BOOTSTRAP
 -- this is the entrypoint to userspace
 
-print("System #"..(sys.id).." is booting!")
+print("System #"..(sys.getId()).." is booting!")
 -- Load the APIs
 coroutine    = sys:loadApi("coroutine")
 os    = sys:loadApi("os")
@@ -12,21 +12,21 @@ peripheral = sys:loadApi("peripheral")
 	drone = sys:loadApi("drone")
 end--]]
 shell = sys:loadApi("shell")
-print("System #"..(sys.id).." APIs loaded!")
+print("System #"..(sys.getId()).." APIs loaded!")
 
 sys:init()
 
 
 if not fs.isDir("./") then fs.makeDir("./") end
 fs.chDir("./")
-print("Finished booting #"..sys.id..", dropping to shell.")
+print("Finished booting #"..sys.getId()..", dropping to shell.")
 
 -- Test 
 --dump(_G)
 --dump(getfenv(shell.run))
 
 if fs.isFile("startup") then
-	shell.run("startup",{sys.id},_G)
+	shell.run("startup",{sys.getId()},_G)
 end
 
 shell.main(_G)

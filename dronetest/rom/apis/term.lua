@@ -5,11 +5,11 @@
 local term = {}
 term.cursorPos = {1,1}
 function term.clear()
-	dronetest.console_histories[sys.id] = ""
+	dronetest.console_histories[dronetest.current_id] = ""
 end
 
 function term.write(msg)
-	dronetest.print(sys.id,msg,true)
+	dronetest.print(dronetest.current_id,msg,true)
 	return string.len(msg)
 end
 
@@ -405,9 +405,9 @@ term.keyChars = {
 	
 }
 function term.getChar()
-	local e = dronetest.events.wait_for_receive(sys.id,{"key"},minetest.get_meta(dronetest.active_systems[sys.id].pos):get_string("channel"),0,0)
-	if term.keyChars[e.msg.msg] then
-		return term.keyChars[e.msg.msg]
+	local e = dronetest.events.wait_for_receive(dronetest.current_id,{"key"},minetest.get_meta(dronetest.active_systems[dronetest.current_id].pos):get_string("channel"),0,0)
+	if term.keyChars[e.msg] then
+		return term.keyChars[e.msg]
 	end
 	return ""
 end

@@ -10,6 +10,7 @@ Licensed under NOTHING.
 dronetest = {
 	debug = true,
 	last_id = 0,
+	current_id = 0, -- don't ever change this
 	last_drone_id = 0,
 	globalstep_interval = 0.01,
 	cycles_per_step = 4,

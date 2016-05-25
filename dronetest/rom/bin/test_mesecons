@@ -1,6 +1,6 @@
 -- check if mesecons node above computer/drone is on/off
 
-local pos = active_systems[sys.id].pos
+local pos = active_systems[dronetest.current_id].pos
 local dir = 5 -- up
 local npos = minetest.facedir_to_dir(dir)
 

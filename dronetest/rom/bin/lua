@@ -42,14 +42,14 @@ while true do
 	print("receive: "..dump(event))
 	if event ~= nil then
 		if event.type == "input" then
-			print(sys.id.." received input: "..dump(event.msg))
+			print(dronetest.current_id.." received input: "..dump(event.msg))
 			if type(event.msg) ~= "string" or event.msg == "" then
 				print("$")
 			elseif not processInput(event.msg) then 
 				print("Command '"..event.msg.."' failed.")
 			end
 		else
-			print(sys.id.." received unhandled event: "..dump(event))
+			print(dronetest.current_id.." received unhandled event: "..dump(event))
 		end
 	end
 	sys.yield()

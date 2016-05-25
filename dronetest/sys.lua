@@ -1,49 +1,56 @@
 
 -- Sys userspace API
 dronetest.sys = {}
-dronetest.sys.id = 0
+-- dronetest.dronetest.current_id = 0
 dronetest.sys.currentDir = ""
 dronetest.sys.last_msg_id = 0
 dronetest.sys.yield = coroutine.yield
 dronetest.sys.getTime = function()
 	return minetest.get_gametime()
 end
+
+dronetest.sys.getId = function()
+--	print(dump(_G))
+	return dronetest.current_id
+end
+
 dronetest.sys.time = dronetest.sys.getTime 
 function dronetest.sys:receiveEvent(filter)
 	if filter == nil then
 		filter = {}
 	end
-	return dronetest.events.receive(self.id,filter)
+	return dronetest.events.receive(self.getId(),filter)
 end
 function dronetest.sys:sendEvent(event)
-	return dronetest.events.send_by_id(self.id,event)
+	return dronetest.events.send_by_id(self.getId(),event)
 end
 function dronetest.sys:receiveDigilineMessage(channel,msg_id)
-	local e = dronetest.events.receive(self.id,{"digiline"},channel,msg_id)
+	local e = dronetest.events.receive(self.getId(),{"digiline"},channel,msg_id)
 	if e == nil then return nil end
 	return e.msg
 end
 
 function dronetest.sys:waitForDigilineMessage(channel,msg_id,timeout)
-	local e = dronetest.events.wait_for_receive(self.id,{"digiline"},channel,msg_id,timeout)
+	local e = dronetest.events.wait_for_receive(self.getId(),{"digiline"},channel,msg_id,timeout)
+	print("waited for digiline message: "..dump(e))
 	if e == nil then return nil end
 	return e.msg
 end
 
 function dronetest.sys:waitForEvent(channel,filter,timeout)
-	local e = dronetest.events.wait_for_receive(self.id,filter,channel,0,timeout)
+	local e = dronetest.events.wait_for_receive(self.getId(),filter,channel,0,timeout)
 	if e == nil then return nil end
 	return e.msg
 end
 function dronetest.sys:init()
 	-- make sure there are no old listeners left after a crash/restart
-	dronetest.events.unregister_listeners(self.id)
+	dronetest.events.unregister_listeners(self.getId())
 	return true
 end
 
 function dronetest.sys:getUniqueId(event)
 	self.last_msg_id = self.last_msg_id + 1
-	return minetest.get_gametime().."_"..self.id.."_"..self.last_msg_id
+	return minetest.get_gametime().."_"..self.getId().."_"..self.last_msg_id
 end
 
 -- Gets an API as a string, used only wrapped in bootstrap.lua
@@ -57,7 +64,7 @@ local function getApi(name, sandbox)
 end
 
 function dronetest.sys:loadApi(name)
-	print(self.id.." loads api '"..name.."'")
+	print(self.getId().." loads api '"..name.."'")
 	local api = getApi(name, dronetest.sys.sandbox)
 	local env_save = table.copy(dronetest.userspace_environment)
 	local env_global = getfenv(api)
@@ -70,7 +77,7 @@ function dronetest.sys:loadApi(name)
 	
 	-- Make drone/computer's env available to APIs, with id and stuff
 	env_save.sys = getfenv(2).sys
-	env_save.print = function(msg) dronetest.print(env_save.sys.id,msg) end
+	env_save.print = function(msg) dronetest.print(env_save.sys.getId(),msg) end
 	env_save.dronetest = dronetest
 	setfenv(api,env_save)
 	return api()

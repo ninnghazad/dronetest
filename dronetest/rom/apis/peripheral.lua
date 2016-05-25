@@ -3,7 +3,7 @@
 local peripheral = {}
 
 function peripheral.wrap(channel,timeout)
-	local pos = dronetest.active_systems[sys.id].pos
+	local pos = dronetest.active_systems[dronetest.current_id].pos
 	-- use a unique message-id so we are able to identify the response to our request easily.
 	local msg_id = sys:getUniqueId()
 	-- this should be wrapped in sys:sendDigilineMessage
@@ -27,7 +27,7 @@ function peripheral.wrap(channel,timeout)
 	for name,desc in pairs(e.msg) do
 		print("wrap peripheral's method "..name..": "..dump(desc))
 		newp[name] = function(a,b,c,d,e)
-			local pos = dronetest.active_systems[sys.id].pos
+			local pos = dronetest.active_systems[dronetest.current_id].pos
 			local msg_id = sys:getUniqueId() 
 		--	dronetest.log("action: "..name.." @ "..channel)
 			-- send action -- we attach a print() function, so the peripheral, when called from a computer, can print to its screen
@@ -36,7 +36,7 @@ function peripheral.wrap(channel,timeout)
 			-- receive answer, see above
 			e = sys:waitForDigilineMessage(channel,msg_id,timeout)
 			if e == nil then
-				print("system "..sys.id.." could not reach peripheral on channel '"..channel.."' for action '"..name.."'.")
+				print("system "..dronetest.current_id.." could not reach peripheral on channel '"..channel.."' for action '"..name.."'.")
 				return nil
 			end
 			
@@ -54,7 +54,7 @@ function peripheral.wrap_digilines(channel)
 	local newp = {
 		channel = channel,
 		sendAndReceive = function(msg,timeout)
-			local pos = dronetest.active_systems[sys.id].pos
+			local pos = dronetest.active_systems[dronetest.current_id].pos
 			local msg_id = sys:getUniqueId()
 			digiline:receptor_send(pos, digiline.rules.default,channel, {action=msg,msg_id=msg_id})
 			e = sys:waitForDigilineMessage(channel,msg_id,timeout)
@@ -65,7 +65,7 @@ function peripheral.wrap_digilines(channel)
 			return unpack(e.msg)
 		end,
 		send = function(msg)
-			local pos = dronetest.active_systems[sys.id].pos
+			local pos = dronetest.active_systems[dronetest.current_id].pos
 			digiline:receptor_send(pos, digiline.rules.default,channel, {action=msg,msg_id=msg_id})
 		end,
 		receive = function(timeout)

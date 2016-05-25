@@ -32,7 +32,7 @@ local function parse_flags(...)
 end
 
 shell.prompt = function()
-	return "#"..sys.id..":"..fs.currentDir().."$ "
+	return "#"..dronetest.current_id..":"..fs.currentDir().."$ "
 end
 shell.cursorPos = {1,1}
 
@@ -56,8 +56,8 @@ function shell.main(env)
 	local func = function(event)
 	--	print("Char: " .. dump(event.msg))
 	
-		if term.keyChars[event.msg.msg] then
-			c = term.keyChars[event.msg.msg]
+		if term.keyChars[event.msg] then
+			c = term.keyChars[event.msg]
 			if c ~= '\n' then
 				if c == '\b' then
 					l = string.sub(l,1,string.len(l)-1)
@@ -89,7 +89,7 @@ function shell.main(env)
 				l = ""
 			end
 		else
-			if event.msg.msg == "38:0:0" then -- up-arrow
+			if event.msg == "38:0:0" then -- up-arrow
 				if #history == 0 then
 					-- beep
 				else
@@ -104,7 +104,7 @@ function shell.main(env)
 					l = history[historyPosition]
 					term.write(l)
 				end
-			elseif event.msg.msg == "40:0:0" then -- down-arrow
+			elseif event.msg == "40:0:0" then -- down-arrow
 				if #history == 0 then
 					-- beep
 				else
@@ -118,7 +118,7 @@ function shell.main(env)
 							term.write("\b")
 						end
 						l = ""
-						return
+						return true
 					else
 						historyPosition = historyPosition + 1
 					end
@@ -128,8 +128,10 @@ function shell.main(env)
 					l = history[historyPosition]
 					term.write(l)
 				end
+			elseif event.msg == "160:0:0" then -- shift-key
+				return true
 			else
-				print("shell: unbound key "..event.msg.msg)
+				print("shell: unbound key "..event.msg)
 				return false
 			end
 			
@@ -137,11 +139,11 @@ function shell.main(env)
 		return true
 	end
 	
-	local listener = dronetest.events.register_listener(sys.id,{"key"},func)
+	local listener = dronetest.events.register_listener(dronetest.current_id,{"key"},func)
 	local lfunc = function(event) 
 		table.insert(buffer,event.msg)
 	end
-	local line_listener = dronetest.events.register_listener(sys.id,{"input"},lfunc)
+	local line_listener = dronetest.events.register_listener(dronetest.current_id,{"input"},lfunc)
 	
 	-- We have to execute the actual command from here, otherwise we run into cross-yielding-issues
 	-- This way the execution has a slight delay, but as the input does not, the user will not notice.
@@ -158,11 +160,11 @@ function shell.main(env)
 				cmd = table.remove(argv,1)
 				argv[0] = cmd -- i like it the classic way
 				
-				dronetest.events.unregister_listener(sys.id,listener)
-				dronetest.events.unregister_listener(sys.id,line_listener)
+				dronetest.events.unregister_listener(dronetest.current_id,listener)
+				dronetest.events.unregister_listener(dronetest.current_id,line_listener)
 				shell.run(cmd,argv,env,env_global)
-				listener = dronetest.events.register_listener(sys.id,{"key"},func)
-				line_listener = dronetest.events.register_listener(sys.id,{"input"},lfunc)
+				listener = dronetest.events.register_listener(dronetest.current_id,{"key"},func)
+				line_listener = dronetest.events.register_listener(dronetest.current_id,{"input"},lfunc)
 				
 				table.insert(history,ocmd)
 				historyPosition = 0
@@ -176,8 +178,8 @@ function shell.main(env)
 	end
 	
 	-- Remember to remove the listener
-	dronetest.events.unregister_listener(sys.id,listener)
-	dronetest.events.unregister_listener(sys.id,line_listener)
+	dronetest.events.unregister_listener(dronetest.current_id,listener)
+	dronetest.events.unregister_listener(dronetest.current_id,line_listener)
 	term.write("shell has terminated\n")
 end
 
@@ -185,7 +187,7 @@ function shell.run(cmd,argv,env,env_global)
 	if env == nil then env = _G end
 	argv = argv or {}
 	-- TODO: write real cli parser
-	local f,err = loadfile(minetest.get_worldpath().."/"..sys.id.."/"..cmd)
+	local f,err = loadfile(minetest.get_worldpath().."/"..dronetest.current_id.."/"..cmd)
 	
 	if f == nil then
 		f,err = loadfile(mod_dir.."/rom/bin/"..cmd)
@@ -201,8 +203,8 @@ function shell.run(cmd,argv,env,env_global)
 			if env[k] == nil then env[k] = v end 
 		end
 	else
-		--print("shell.run from home for #"..sys.id..": "..minetest.get_worldpath().."/"..sys.id.."/"..cmd)
-		print("shell.run from home for #"..sys.id..": /"..cmd)
+		--print("shell.run from home for #"..dronetest.current_id..": "..minetest.get_worldpath().."/"..dronetest.current_id.."/"..cmd)
+		print("shell.run from home for #"..dronetest.current_id..": /"..cmd)
 	end
 	
 	env["argv"] = argv

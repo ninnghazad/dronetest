@@ -104,7 +104,7 @@ local function redrawScreen()
 end
 
 local function keyCallback(event)
-	local key = event.msg.msg
+	local key = event.msg
 --	print("key: "..key)
 
 	if key == "35:0:0" then -- end
@@ -191,8 +191,8 @@ local function keyCallback(event)
 	return true
 end
 
-print("edit on #"..sys.id.." @ "..sys.channel)
-local listener = dronetest.events.register_listener(sys.id,{"key"},keyCallback)
+print("edit on #"..dronetest.current_id.." @ "..sys.channel)
+local listener = dronetest.events.register_listener(dronetest.current_id,{"key"},keyCallback)
 
 redrawScreen()
 while loop do
@@ -207,6 +207,6 @@ while loop do
 	sleep(0.5)
 end
 
-dronetest.events.unregister_listener(sys.id,listener)
+dronetest.events.unregister_listener(dronetest.current_id,listener)
 term.clear()
 return true

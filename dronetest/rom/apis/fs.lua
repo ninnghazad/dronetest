@@ -11,7 +11,7 @@ end
 --]]
 
 local max_disk_space = dronetest.max_disk_space
-local baseDir = minetest.get_worldpath().."/"..sys.id
+local baseDir = minetest.get_worldpath().."/"..dronetest.current_id
 
 -- This isn't the best spot for this, but make it so _makePath can see our current ID
 -- needs to be before first use of the function!
@@ -117,8 +117,10 @@ fs.readFile = function(path)
 	if lfs.attributes(p,"mode") ~= "file" then
 		return false
 	end
-	io.input(p)
-	return io.read("*all")
+	local f = io.open(p,"rb")
+	local data = f:read("*all")
+	f:close()
+	return data
 end
 
 fs.writeFile = function(path,string)
@@ -127,8 +129,13 @@ fs.writeFile = function(path,string)
 	if lfs.attributes(p,"mode") == "directory" then
 		return false
 	end
-	io.output(p)
-	return io.write(string)
+	local f = io.open(p,"w+b")
+	local r,err f:write(string)
+	if r == nil then
+		print(err)
+	end
+	f:close()
+	return true
 end
 fs.touch = function(path)
 	local p = _makePath(path)
@@ -156,7 +163,7 @@ fs.makeDir = function(path)
 	path = _hidePath(_canonicalizePath(path))
 	if p == "" then return false,"illegal path '"..path.."'" end
 	local r,err = lfs.mkdir(p)
-	if not r then print(sys.id.." Could not create directory '"..path.."': "..err) return false,err end
+	if not r then print(dronetest.current_id.." Could not create directory '"..path.."': "..err) return false,err end
 	return fs.isDir(p)
 end
 
