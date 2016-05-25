@@ -1,0 +1,17 @@
+local channel = argv[1]
+local pos = dronetest.active_systems[dronetest.current_id].pos
+
+local msg = ""
+while true do
+	msg = ""
+	msg = sys:waitForDigilineMessage(channel,0,4)
+	if msg ~= nil then
+		if type(msg) == "table" and msg.channel == channel then
+			print("received '"..dump(msg).."\n")
+			digiline:receptor_send(pos, digiline.rules.default, channel, msg)
+		else
+
+		end
+	end
+end
+return true

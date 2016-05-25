@@ -1,0 +1,8 @@
+local channel = argv[1]
+local p = peripheral.wrap(channel)
+if p == nil then
+	return true
+end
+
+print("Contacted peripheral on channel '"..channel.."'\n")
+return true
