@@ -114,7 +114,7 @@ end
 
 dronetest.userspace_environment.loadfile = function(s)
 	print("nonono, not allowed atm!")
-	function f() end
+	local f = function() end
 	return f,"access denied"
 --[[
 	local f,err = loadfile(s)	
