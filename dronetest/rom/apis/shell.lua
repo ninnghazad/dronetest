@@ -187,10 +187,10 @@ function shell.run(cmd,argv,env,env_global)
 	if env == nil then env = _G end
 	argv = argv or {}
 	-- TODO: write real cli parser
-	local f,err = loadfile(minetest.get_worldpath().."/"..dronetest.current_id.."/"..cmd)
+	local f,err = dronetest.loadfile(minetest.get_worldpath().."/"..dronetest.current_id.."/"..cmd)
 	
 	if f == nil then
-		f,err = loadfile(mod_dir.."/rom/bin/"..cmd)
+		f,err = dronetest.loadfile(mod_dir.."/rom/bin/"..cmd)
 		if f == nil then
 			print("WARN: no such file or buggy file '"..cmd.."': "..err)
 			return false

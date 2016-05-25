@@ -32,6 +32,7 @@ dronetest = {
 	mod_name = minetest.get_current_modname(),
 	mod_dir = minetest.get_modpath(minetest.get_current_modname()),
 	bootstrap = "",
+	loadfile = loadfile,
 	--Config documentation, items that have one get save in config and can be changed by menu
 	doc = {
 		last_id = "The last id given to a computer.",
