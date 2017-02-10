@@ -16,7 +16,7 @@ Install in mods-folder as "dronetest".
 or use creative inventory to get items.
 
 Display, transceiver and computer must touch or be connected using digilines. 
-Right-click display and transceiver and set channel to "dronetest:computer:1".  
+Right-click display and transceiver and set channel to "dronetest`:computer:`1".  
 Right-click computer and click "ON" or use mesecons to turn it on/off.
 
 You can type stuff using the display (with integrated keyboard) or directly on
