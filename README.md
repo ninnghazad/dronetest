@@ -9,14 +9,14 @@ This is not ready for use.
 
 ###How to use:
 Install in mods-folder as "dronetest".    
-'/giveme dronetest:computer'        to get a computer  
-'/giveme dronetest:drone'           to get a drone-spawner  
-'/giveme dronetest_display:display' to get a display  
-'/giveme dronetest_transceiver:transceiver' to get a transceiver  
+`/giveme dronetest:computer`        to get a computer  
+`/giveme dronetest:drone`           to get a drone-spawner  
+`/giveme dronetest_display:display` to get a display  
+`/giveme dronetest_transceiver:transceiver` to get a transceiver  
 or use creative inventory to get items.
 
 Display, transceiver and computer must touch or be connected using digilines. 
-Right-click display and transceiver and set channel to "dronetest`:computer:`1".  
+Right-click display and transceiver and set channel to `dronetest:computer:1`.  
 Right-click computer and click "ON" or use mesecons to turn it on/off.
 
 You can type stuff using the display (with integrated keyboard) or directly on
