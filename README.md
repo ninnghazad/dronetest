@@ -7,7 +7,7 @@ This is not ready for use.
 
 <img src="http://dunkelraum.net/share/screen4.png"/>
 
-###How to use:
+### How to use:
 Install in mods-folder as "dronetest".    
 `/giveme dronetest:computer`        to get a computer  
 `/giveme dronetest:drone`           to get a drone-spawner  
@@ -30,7 +30,7 @@ Press 'ESC' to leave and watch display to see output.
   
 Also try 'time' or 'ls'. There are more commands, like 'dance' for drones.  
 
-###Infos:
+### Infos:
 
 /rom is read-only  
 /rom/apis contains all APIs  
@@ -47,11 +47,11 @@ and are thusly deemed safe.
 Take note of:
 http://mesecons.net/developers.php
 
-###Current problems:
+### Current problems:
   - There is a memleak with unloading textures somewhere in minetest, thusly using the display will leak memory, and sooner or later crash your system. to test computers running a long time, just set the display to some non-existant channel. May just be the texture-name-to-id cache...
   - New input method has to wait for https://github.com/minetest/minetest/pull/1737
 
-##Roadmap:
+## Roadmap:
 Look around the source for examples on how to get stuff done.  
 - Core:
   - Store data in world's instead of mod's folder.
@@ -72,7 +72,7 @@ This list is constantly changing, so don't rely on it.
   
   
   
-##Pictures:
+## Pictures:
 Closeup of a display:  
 <img src="http://dunkelraum.net/share/screen5.png"/>  
 
